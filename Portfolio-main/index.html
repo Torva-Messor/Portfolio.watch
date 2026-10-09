@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f1ea">
+  <meta name="description" content="VOID / SYSTEMS — Minimalistic complexity. Systems, software, computation and experimental interfaces.">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+  </script>
+  <title>VOID / SYSTEMS</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/fabric.css">
+  <link rel="stylesheet" href="css/watch.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div id="silk-root" aria-hidden="true">
+    <canvas id="silk-canvas"></canvas>
+    <canvas id="silk-fallback-canvas"></canvas>
+    <div class="silk-fallback"></div>
+  </div>
+
+  <div id="boot" class="boot" role="status" aria-live="polite">
+    <div class="boot__name">VOID / SYSTEMS</div>
+    <div class="boot__status"><span>INITIALIZING SURFACE</span><i></i></div>
+  </div>
+
+  <div id="webgl-warning" class="warning" hidden>
+    <strong>WEBGL SURFACE FALLBACK</strong>
+    <p>The GPU surface is unavailable, so the site is using a soft 2D satin-wave fallback. The interface remains fully usable.</p>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#home" data-nav>VOID / SYSTEMS</a>
+    <div class="topbar__meta">SYS / 002&nbsp;&nbsp;·&nbsp;&nbsp;2026</div>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="nav-panel">MENU</button>
+  </header>
+
+  <nav id="nav-panel" class="nav-panel" aria-label="Primary navigation">
+    <div class="nav-panel__inner">
+      <span class="eyebrow">NAV / INDEX</span>
+      <a href="#watch-lab" data-open-watch><b>00</b><span>WATCH LAB</span><i>↗</i></a>
+      <a href="#about" data-nav><b>01</b><span>ABOUT</span><i>01</i></a>
+      <a href="#roles" data-nav><b>02</b><span>ROLES</span><i>02</i></a>
+      <a href="#work" data-nav><b>03</b><span>WORK</span><i>03</i></a>
+      <a href="#horology" data-nav><b>04</b><span>HOROLOGY</span><i>04</i></a>
+      <a href="#contact" data-nav><b>05</b><span>CONTACT</span><i>05</i></a>
+    </div>
+  </nav>
+
+  <main id="main">
+    <section id="home" class="section hero">
+      <div class="section-mark">00 / INTRO</div>
+      <div class="hero__content">
+        <p class="kicker reveal">SYSTEMS / SOFTWARE / COMPUTATION</p>
+        <h1 class="hero__title reveal">VOID <span>/</span> SYSTEMS</h1>
+        <div class="hero__bottom">
+          <div class="hero__lead">
+            <p class="hero__motto reveal">MINIMALISTIC COMPLEXITY.</p>
+            <button class="line-button hero__watch-button" id="open-watch-hero" type="button">OPEN WATCH LAB →</button>
+          </div>
+          <p class="hero__note reveal">A quiet technical object.<br>Increasingly complex the longer you look.</p>
+        </div>
+      </div>
+      <div class="measure">SURFACE / 000.00</div>
+      <div class="hero__scroll">OBSERVE THE SURFACE <span>↓</span></div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="section-mark">01 / ABOUT</div>
+      <div class="section-grid">
+        <div class="section-index">SYSTEM / 001</div>
+        <div>
+          <h2 class="display">I build systems that sit between software, computation and experimentation.</h2>
+          <p class="body-copy">The work moves between low-level development,some quantitative systems for private use, infrastructure for storage solutions for a large arms firm, product thinking and small technical instruments. of you are still reading this here a little fun fact / tip. learn agnostics with c. It s fun and useful.</p>
+        </div>
+        <aside class="spec-list">
+          <div><span>DOMAIN</span><strong>COMPUTATION</strong></div>
+          <div><span>METHOD</span><strong>PROTOTYPE / OBSERVE</strong></div>
+          <div><span>BIAS</span><strong>QUIET / PRECISE</strong></div>
+          <div><span>STATE</span><strong>IN PROGRESS</strong></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="roles" class="section section--roles">
+      <div class="section-mark">02 / ROLES</div>
+      <div class="role-intro">
+        <span class="section-index">SYSTEM / 002</span>
+        <h2 class="display display--small">Different problems deserve different instruments.</h2>
+      </div>
+      <div class="specimens">
+        <button class="specimen" data-lab="rom">
+          <span class="specimen__num">01</span>
+          <span class="specimen__main"><strong>ACTIVE ROM DEV</strong><small>ROM DEVELOPMENT / REVERSE ENGINEERING</small></span>
+          <span class="specimen__tag">DOCK OF DOOM ↗</span>
+        </button>
+        <button class="specimen" data-lab="quant">
+          <span class="specimen__num">02</span>
+          <span class="specimen__main"><strong>C# &amp; QUANT</strong><small>QUANTITATIVE SYSTEMS / MARKET ANALYSIS</small></span>
+          <span class="specimen__tag">SIGNAL LAB ↗</span>
+        </button>
+        <button class="specimen" data-lab="founder">
+          <span class="specimen__num">03</span>
+          <span class="specimen__main"><strong>TECH STARTUP / FOUNDER</strong><small>PRODUCT / SYSTEM DESIGN / DECISION LOOPS</small></span>
+          <span class="specimen__tag">PRODUCT SYSTEM ↗</span>
+        </button>
+        <button class="specimen" data-lab="consulting">
+          <span class="specimen__num">04</span>
+          <span class="specimen__main"><strong>INDEPENDENT IT CONSULTANT</strong><small>INFRASTRUCTURE / RELIABILITY / TECHNICAL CONSULTING</small></span>
+          <span class="specimen__tag">INFRA LAB ↗</span>
+        </button>
+        <button class="specimen" data-lab="dpls">
+          <span class="specimen__num">05</span>
+          <span class="specimen__main"><strong>FORMER A/G-DPLS DEV</strong><small>LEGACY DEVELOPMENT / DOMAIN-SPECIFIC SYSTEMS</small></span>
+          <span class="specimen__tag">DPLS ARCHIVE ↗</span>
+        </button>
+      </div>
+    </section>
+
+    <section id="work" class="section section--work">
+      <div class="section-mark">03 / WORK</div>
+      <div class="work-head">
+        <span class="section-index">SYSTEM / 003</span>
+        <h2 class="display">Small instruments. Large systems thinking.</h2>
+      </div>
+      <div class="case-row">
+        <article class="case">
+          <div class="case__header"><span>LAB / 001</span><span>QUANT</span></div>
+          <div class="case__body"><h3>MARKET ANALYSIS</h3><p>insert demo currently under construction. basic prototype of interactive wondow there fully vibe coded. quality not garunteed on this one.</p><button class="line-button" data-lab="quant">OPEN CASE →</button></div>
+        </article>
+        <article class="case">
+          <div class="case__header"><span>LAB / 002</span><span>ROM</span></div>
+          <div class="case__body"><h3>DOCK OF DOOM</h3><p>insert demo currently under construction. basic prototype of interactive wondow there fully vibe coded. quality not garunteed on this one.</p><button class="line-button" data-lab="rom">OPEN CASE →</button></div>
+        </article>
+        <article class="case">
+          <div class="case__header"><span>LAB / 003</span><span>ARCHITECTURE</span></div>
+          <div class="case__body"><h3>SYSTEMS MAP</h3><p>insert demo currently under construction. basic prototype of interactive wondow there fully vibe coded. quality not garunteed on this one</p><button class="line-button" data-lab="consulting">OPEN CASE →</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="horology" class="section section--horology">
+      <div class="section-mark">04 / HOROLOGY</div>
+      <div class="horology-intro">
+        <div><span class="section-index">SYSTEM / 004</span><h2 class="display">A machine within the machine.</h2></div>
+        <button class="line-button line-button--dark" id="open-watch">OPEN WATCH LAB →</button>
+      </div>
+      <div class="watch-teaser">
+        <div class="watch-teaser__dial" aria-hidden="true">
+          <div class="dial-ring"></div><div class="dial-ring dial-ring--inner"></div>
+          <div class="dial-hand dial-hand--hour"></div><div class="dial-hand dial-hand--minute"></div>
+          <div class="dial-center"></div><span class="dial-label">VOID / 6497</span>
+        </div>
+        <div class="watch-teaser__spec">
+          <span>HOROLOGY DATABASE</span>
+          <strong>ETA 6497-1</strong>
+          <p>Manual winding / 36.6 mm / 4.5 mm / 18,000 A/h / 17 jewels / ~52 h typical reserve (46 h minimum).</p>
+          <small>REFERENCE SPECS + KINEMATIC STUDIES + LOCAL GLTF / CAD INSPECTION.</small>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section section--contact">
+      <div class="section-mark">05 / CONTACT</div>
+      <div class="contact">
+        <span class="section-index">SYSTEM / 005</span>
+        <h2 class="display">CONTACT</h2>
+        <a class="contact__email" href="mailto:trevorsmith.buissnes@gmail.com">trevorsmith.buissnes@gmail.com ↗</a>
+        <p>Dont know why you would contact me but if you want im available</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><span>VOID / SYSTEMS</span><span>© 2026</span><span>MINIMALISTIC COMPLEXITY.</span></footer>
+
+  <div id="lab-modal" class="instrument-overlay" aria-hidden="true">
+    <div class="instrument-overlay__backdrop" data-close-modal></div>
+    <div class="instrument-shell">
+      <header class="instrument-head">
+        <span id="lab-code">LAB / 000</span>
+        <button data-close-modal>ESC / CLOSE ×</button>
+      </header>
+      <div id="lab-content"></div>
+    </div>
+  </div>
+
+  <div id="watch-lab" class="watch-lab" aria-hidden="true">
+    <div class="watch-lab__top"><span>HOROLOGY / LAB</span><button id="close-watch">CLOSE ×</button></div>
+    <aside class="watch-lab__archive">
+      <div class="archive-title"><span class="eyebrow">MOVEMENT SELECTOR</span><span>02 / 02</span></div>
+      <label class="movement-picker-label" for="movement-picker">CHOOSE MOVEMENT</label>
+      <select id="movement-picker" class="movement-picker" aria-label="Choose a movement">
+        <option value="eta-6497-1">ETA 6497-1 — imported CAD assembly</option>
+        <option value="seiko-nh35">TMI NH35A — imported CAD reconstruction</option>
+      </select>
+      <div class="movement-list">
+        <button class="caliber active" data-caliber="eta-6497-1"><b>ETA</b><span>6497-1</span><small>MANUAL / CAD ASSEMBLY</small></button>
+        <button class="caliber" data-caliber="seiko-nh35"><b>TMI</b><span>NH35A</span><small>AUTOMATIC / CAD RECONSTRUCTION</small></button>
+      </div>
+      <div class="archive-divider"></div>
+    </aside>
+
+    <div id="watch-canvas-wrap" class="watch-canvas-wrap">
+      <canvas id="watch-canvas"></canvas>
+      <div id="watch-loader" class="watch-loader">INITIALIZING MOVEMENT</div>
+      <div id="model-error" class="model-error" hidden></div>
+      <div class="watch-hud"><span id="watch-engine-label">LOADING CAD ASSEMBLY</span><span>DRAG ROTATE · WHEEL ZOOM</span></div>
+      <div id="watch-selection" class="watch-selection" hidden></div>
+      <div id="watch-label-layer" class="watch-label-layer" aria-hidden="true"></div>
+    </div>
+
+    <aside class="watch-lab__info">
+      <div class="watch-data">
+        <span class="eyebrow">SELECTED MOVEMENT</span>
+        <h2 id="caliber-name">ETA 6497-1</h2>
+        <dl id="caliber-data"></dl>
+      </div>
+      <div class="watch-controls">
+        <div class="control-line"><span>PLAY</span><button id="watch-play" class="toggle active">ON</button></div>
+        <div class="control-line"><span>SPEED</span><input id="watch-speed" type="range" min="0" max="3" step=".01" value="1"><output id="watch-speed-out">1.00×</output></div>
+        <div class="control-line"><span>EXPLODE</span><input id="watch-explode" type="range" min="0" max="1" step=".01" value="0"><output id="watch-explode-out">0%</output></div>
+        <div class="control-line"><span>LIGHT</span><input id="watch-light" type="range" min=".4" max="2" step=".01" value="1"><output id="watch-light-out">1.00×</output></div>
+        <div class="control-actions"><button id="watch-reset">RESET</button><button id="watch-front">FRONT</button><button id="watch-perspective">PERSPECTIVE</button></div>
+        <div class="control-actions"><button id="watch-labels">LABELS / OFF</button><button id="watch-isolate">ISOLATE</button></div>
+      </div>
+      <div id="watch-component" class="component-info" hidden></div>
+      <div id="watch-source" class="source-note"></div>
+    </aside>
+  </div>
+
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

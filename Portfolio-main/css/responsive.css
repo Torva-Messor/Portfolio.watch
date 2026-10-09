@@ -1,0 +1,80 @@
+@media (max-width:900px){
+  .topbar{height:62px;padding:0 5vw}
+  .topbar__meta{display:none}
+  .section{padding:105px 5vw 20vw}
+  .section-mark{left:5vw;top:82px}
+  .hero{padding-top:12vh}
+  .hero__title{font-size:clamp(54px,15vw,120px)}
+  .hero__bottom{margin-top:18vh;align-items:start;gap:30px}
+  .hero__note{text-align:left}
+  .section-grid,.role-intro,.work-head,.contact{grid-template-columns:1fr;gap:35px;padding-top:12vh}
+  .spec-list{margin-top:15px}
+  .specimens{margin:10vh 0 0;width:100%}
+  .specimen{grid-template-columns:35px 1fr;gap:15px}
+  .specimen__tag{grid-column:2}
+  .case-row{grid-template-columns:1fr;margin-top:10vh}
+  .case{min-height:300px;border-right:0;border-bottom:1px solid var(--line)}
+  .case:last-child{border-bottom:0}
+  .horology-intro{padding-top:12vh;display:block}
+  .horology-intro .line-button{margin-top:40px}
+  .watch-teaser{grid-template-columns:1fr;width:100%;margin-top:9vh}
+  .watch-teaser__dial{width:min(62vw,300px)}
+  .contact{padding-top:14vh}
+  .contact h2,.contact__email,.contact p{grid-column:1}
+  .footer{padding:25px 5vw;gap:12px;flex-wrap:wrap}
+  .instrument-grid{grid-template-columns:1fr;padding:5vh 5vw 10vh;gap:28px}
+  .instrument-copy h2{font-size:clamp(44px,14vw,86px)}
+  .instrument-canvas,.instrument-map{min-height:340px}
+  .instrument-map svg{min-height:340px}
+  .instrument-shell{overflow:auto}
+  .instrument-head{padding:0 5vw}
+}
+@media (max-width:560px){
+  .hero__content{min-width:0;width:100%;}
+  .hero__title{font-size:clamp(32px,10.2vw,58px);letter-spacing:-.075em;white-space:normal;overflow-wrap:anywhere;max-width:100%;line-height:.94;}
+  .topbar{left:0;right:0;width:100%;}
+  .section,.hero{max-width:100%;}
+  .hero__bottom{display:flex;flex-direction:column;align-items:flex-start;gap:24px;margin-top:10vh}.hero__lead{gap:14px}.hero__note{text-align:left}.hero__watch-button{margin:0}
+  .hero__motto{margin-bottom:20px}
+  .display{font-size:35px}
+  .body-copy{font-size:13px}
+  .specimen__main strong{font-size:12px}
+  .specimen__main small{line-height:1.5}
+  .watch-teaser__spec strong{font-size:30px}
+  .nav-panel__inner a{font-size:34px;grid-template-columns:42px 1fr 22px}
+  .instrument-copy p{font-size:12px}
+  .instrument-canvas,.instrument-map{min-height:300px}
+  .instrument-map svg{min-height:300px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .nav-panel__inner a,.specimen,.line-button{transition:none}
+}
+
+@media(max-width:380px){
+ .hero__title{font-size:clamp(29px,9.8vw,40px);letter-spacing:-.07em}
+ .hero__title span{display:inline}
+ .kicker{font-size:8px;letter-spacing:-.01em;overflow-wrap:anywhere}
+ .section-mark{font-size:8px}
+ .watch-teaser__spec strong{font-size:28px;overflow-wrap:anywhere}
+ .footer{font-size:7px}
+}
+
+/* Small landscape phones and split-screen viewports: reserve the header zone and avoid title collision. */
+@media (max-width:1100px) and (max-height:650px) {
+  .hero { min-height:100svh; padding-top:calc(86px + env(safe-area-inset-top)); padding-bottom:68px; align-items:center; }
+  .hero__content { padding-top:18px; }
+  .hero .section-mark { top:calc(72px + env(safe-area-inset-top)); }
+  .hero__title { width:100%;max-width:100%;font-size:clamp(28px, min(8.2vw, 12.5vh), 72px);line-height:.96;letter-spacing:-.06em;white-space:normal;overflow-wrap:anywhere; }
+  .hero__bottom { margin-top:clamp(24px, 5vh, 42px); gap:18px; }
+  .hero__scroll { bottom:12px; }
+}
+
+/* Avoid headline, kicker and section marker collisions in compact mobile layouts. */
+@media (max-width:1100px) {
+  .hero__content { min-width:0; width:100%; max-width:100%; }
+  .hero__title { max-width:100%; overflow-wrap:anywhere; }
+  .hero__lead,.hero__note { min-width:0; max-width:100%; }
+  .hero__note { line-height:1.6; }
+  .section-mark { max-width:calc(100% - 10vw); overflow-wrap:anywhere; }
+}

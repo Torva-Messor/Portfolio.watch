@@ -1,0 +1,14 @@
+{
+  "manufacturer": "ETA",
+  "caliber": "6498-1",
+  "family": "6498",
+  "type": "Manual winding",
+  "diameter": "16 1/2 ligne / 36.6 mm",
+  "thickness": "4.5 mm",
+  "beatRate": "18,000 A/h",
+  "jewels": 17,
+  "powerReserve": "Typical 52 h (minimum 46 h)",
+  "winding": "Manual",
+  "complications": "Small seconds / layout variant",
+  "model": "procedural"
+}

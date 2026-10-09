@@ -1,0 +1,14 @@
+{
+  "manufacturer": "ETA",
+  "caliber": "2824-2",
+  "family": "2824",
+  "type": "Automatic",
+  "diameter": "11 1/2 ligne / 25.6 mm",
+  "thickness": "4.6 mm",
+  "beatRate": "28,800 A/h",
+  "jewels": 25,
+  "powerReserve": "Typical 42 h",
+  "winding": "Bidirectional automatic; manual winding",
+  "complications": "Date, central seconds, hacking (reference specs)",
+  "model": "procedural"
+}
