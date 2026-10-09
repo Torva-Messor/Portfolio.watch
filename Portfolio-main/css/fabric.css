@@ -1,7 +1,0 @@
-.silk-fallback{background:
-  radial-gradient(70% 55% at 25% 18%,rgba(255,255,255,.72),transparent 66%),
-  radial-gradient(65% 60% at 80% 74%,rgba(210,205,195,.22),transparent 72%),
-  #f4f1ea}
-@media (prefers-reduced-motion:reduce){
-  .reveal{animation-duration:.01ms}
-}
