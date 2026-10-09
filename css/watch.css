@@ -179,7 +179,6 @@
   .watch-lab__top button { padding-inline:3px; }
   .watch-hud { top:8px; left:8px; right:8px; }
   .watch-selection { max-width:calc(100% - 16px); }
-  .watch-part-label { display:none; }
   .watch-canvas-wrap { height:38svh; min-height:225px; }
   .control-actions button { flex:1 1 calc(50% - 6px); }
 }
