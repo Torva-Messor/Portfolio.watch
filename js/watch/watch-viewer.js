@@ -846,7 +846,7 @@ export class WatchViewer {
       const partCenter = bounds.getCenter(new THREE.Vector3());
       const radial = partCenter.clone().sub(movementCenter);
       let displacementRoot;
-
+      const Z_EXPLODE_FACTOR = 10;
       /*if (isMl01) {
         // Keep the base plate as a stable datum. Other top-level CAD units move
         // along the model's thickness axis (Z); their original X/Y arrangement is
@@ -855,7 +855,7 @@ export class WatchViewer {
           part.userData.explodeVector = new THREE.Vector3();
           return;
         }
-        const Z_EXPLODE_FACTOR = 10;
+        
         const axialOffset = partCenter.z - movementCenter.z;
         const axialThreshold = movementSpan * 0.012;
         const axialDirection = Math.abs(axialOffset) > axialThreshold
