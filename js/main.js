@@ -44,8 +44,8 @@ async function openWatchLab(event) {
   if (!watchViewer) {
     if (!watchLoading) {
       watchLoading = Promise.all([
-        import('./watch/watch-viewer.js'),
-        import('./watch/watch-controls.js')
+        import('./watch/watch-viewer.js?v=20261013-3d-explode-fix'),
+        import('./watch/watch-controls.js?v=20261013-3d-explode-fix')
       ])
         .then(async ([viewerModule, controlsModule]) => {
           watchViewer = new viewerModule.WatchViewer(document.querySelector('#watch-canvas'));
@@ -59,7 +59,7 @@ async function openWatchLab(event) {
           if (notice) {
             notice.hidden = false;
             const reason = error?.message ? ` ${error.message}` : '';
-            notice.textContent = `WATCH LAB COULD NOT START.${reason} Check that WebGL is enabled and the Three.js CDN is reachable.`;
+            notice.textContent = `WATCH LAB COULD NOT START.${reason} Reload after publishing the latest files. If it persists, check the browser console and network access to the Three.js CDN.`;
           }
         })
         .finally(() => {
