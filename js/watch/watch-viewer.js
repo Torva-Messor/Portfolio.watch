@@ -845,26 +845,45 @@ export class WatchViewer {
       const radial = partCenter.clone().sub(movementCenter);
       const Z_EXPLODE_FACTOR = 10; // Increase for more depth
 
-let displacementRoot = new THREE.Vector3(
-  radial.x * 0.75,
-  radial.y * 0.75,
-  radial.z * Z_EXPLODE_FACTOR
-).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
-      // Some concentric arbors share almost the same centroid. Give those only a
-      // modest unique 3D nudge so they remain individually inspectable, rather than
-      // leaving them perfectly coincident or forcing them into common Z layers.
-      if (radial.length() < nearCenterThreshold) {
-        const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
-        const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
-        const direction = new THREE.Vector3(
-          Math.cos(index * goldenAngle) * horizontalRadius,
-          Math.sin(index * goldenAngle) * horizontalRadius,
-          vertical
-        ).normalize();
-        const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
-        displacementRoot.addScaledVector(direction, nudge);
-      }
+const isMl01 = this.modelType === 'ml01';
+
+let displacementRoot;
+
+if (isMl01) {
+  displacementRoot = new THREE.Vector3(
+    radial.x * 0.30,
+    radial.y * 0.30,
+    radial.z * 1.5
+  ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
+} else {
+  const Z_EXPLODE_FACTOR = 10;
+
+  displacementRoot = new THREE.Vector3(
+    radial.x * 0.75,
+    radial.y * 0.75,
+    radial.z * Z_EXPLODE_FACTOR
+  ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
+}
+
+if (!isMl01 && radial.length() < nearCenterThreshold) {
+  const vertical =
+    1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
+
+  const horizontalRadius = Math.sqrt(
+    Math.max(0, 1 - vertical * vertical)
+  );
+
+  const direction = new THREE.Vector3(
+    Math.cos(index * goldenAngle) * horizontalRadius,
+    Math.sin(index * goldenAngle) * horizontalRadius,
+    vertical
+  ).normalize();
+
+  const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
+  displacementRoot.addScaledVector(direction, nudge);
+}
+
 
       // Calculate the same root-space translation in each object's parent space.
       // This also works for CAD nodes nested beneath scaled GLTF groups.
