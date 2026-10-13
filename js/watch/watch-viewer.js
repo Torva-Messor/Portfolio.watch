@@ -938,6 +938,8 @@ let displacementRoot = new THREE.Vector3(
     // Every bundled CAD conversion is served from this site. No dead external
     // inspector route and no third-party runtime model URLs are needed.
     const bundledModels = {
+      'ml01': new URL(
+      '../../models/001_ml01_Werk_montiert_einbaufertig.glb', import.meta.url).href,
       'eta-6497-1': new URL('../../models/ETA-6497-1-Movement-Gold-Jewels.glb', import.meta.url).href,
       'seiko-nh35': new URL('../../models/Seiko-NH35-Movement.glb', import.meta.url).href
     };
