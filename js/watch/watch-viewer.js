@@ -854,6 +854,13 @@ export class WatchViewer {
   }
 
   const Z_EXPLODE_FACTOR = 10;
+
+if (isMl01) {
+  if (componentMatches(partName(part), 'mainPlate')) {
+    part.userData.explodeVector = new THREE.Vector3();
+    return;
+  }
+
   const axialOffset = partCenter.z - movementCenter.z;
   const axialThreshold = movementSpan * 0.012;
   const axialDirection = Math.abs(axialOffset) > axialThreshold
@@ -867,15 +874,13 @@ export class WatchViewer {
     radial.y * 0.75 * (EXPLODE_SPREAD_FACTOR - 1),
     axialDirection * axialDistance * Z_EXPLODE_FACTOR
   );
-
 } else {
   displacementRoot = new THREE.Vector3(
     radial.x * 0.75,
     radial.y * 0.75,
     radial.z * Z_EXPLODE_FACTOR
   ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
-      }
-
+}
         // Existing behavior for concentric parts in the original models.
         if (radial.length() < nearCenterThreshold) {
           const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
