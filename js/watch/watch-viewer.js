@@ -846,27 +846,35 @@ export class WatchViewer {
       const partCenter = bounds.getCenter(new THREE.Vector3());
       const radial = partCenter.clone().sub(movementCenter);
       let displacementRoot;
-      const Z_EXPLODE_FACTOR = 10;
+
       if (isMl01) {
-        // Spread every assembly component in all three axes. The radial term
-        // fans parts away from the movement centre in X/Y/Z; the extra axial
-        // term separates stacked plates and bridges without collapsing the
-        // explosion into a single Z-only stack.
+        // Keep the base plate as a stable datum. Other top-level CAD units move
+        // along the model's thickness axis (Z); their original X/Y arrangement is
+        // preserved, which reads as a watchmaker's layer-by-layer exploded view.
         if (componentMatches(partName(part), 'mainPlate')) {
           part.userData.explodeVector = new THREE.Vector3();
           return;
         }
-
+        const Z_EXPLODE_FACTOR = 10;
         const axialOffset = partCenter.z - movementCenter.z;
-        const axialDirection = Math.abs(axialOffset) > movementSpan * 0.012
+        const axialThreshold = movementSpan * 0.012;
+        const axialDirection = Math.abs(axialOffset) > axialThreshold
           ? Math.sign(axialOffset)
-          : (index % 2 === 0 ? 1 : -1);
-        const axialDistance = movementSpan * 0.055 + Math.abs(axialOffset) * 0.3;
-        displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
-        displacementRoot.z += axialDirection * axialDistance;
+          : (axialOffset < 0 ? -1 : 1);
+        const axialDistance = movementSpan * 0.11 + Math.abs(axialOffset) * 0.65;    
+          displacementRoot = new THREE.Vector3(
+          radial.x * 0.30,
+          radial.y * 0.75,
+          axialDirection * axialDistance * Z_EXPLODE_FACTOR
+          );
       } else {
-        displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
-      }
+        
+        displacementRoot = new THREE.Vector3(
+          radial.x * 0.75,
+          radial.y * 0.75,
+          radial.z * Z_EXPLODE_FACTOR
+        ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
+
         // Existing behavior for concentric parts in the original models.
         if (radial.length() < nearCenterThreshold) {
           const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
