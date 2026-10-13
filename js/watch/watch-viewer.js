@@ -873,8 +873,8 @@ if (isMl01) {
   // Stronger separation along the Z axis.
   const axialOffset = partCenter.z - movementCenter.z;
   const axialDirection = Math.abs(axialOffset) > movementSpan * 0.012
-    ? Math.sign(axialOffset)
-    : (vertical < 0 ? -1 : 1);
+  ? Math.sign(axialOffset)
+  : (index % 2 === 0 ? -1 : 1);
 
   displacementRoot.z += axialDirection * (
     movementSpan * 0.25 + Math.abs(axialOffset) * 0.5
