@@ -855,6 +855,7 @@ export class WatchViewer {
           part.userData.explodeVector = new THREE.Vector3();
           return;
         }
+        const Z_EXPLODE_FACTOR = 10;
         const axialOffset = partCenter.z - movementCenter.z;
         const axialThreshold = movementSpan * 0.012;
         const axialDirection = Math.abs(axialOffset) > axialThreshold
@@ -864,10 +865,10 @@ export class WatchViewer {
           displacementRoot = new THREE.Vector3(
           radial.x * 0.30,
           radial.y * 0.75,
-          axialDirection * axialDistance
+          axialDirection * axialDistance * Z_EXPLODE_FACTOR * 0.5
           );
       } else {
-        const Z_EXPLODE_FACTOR = 10;
+        
         displacementRoot = new THREE.Vector3(
           radial.x * 0.75,
           radial.y * 0.75,
