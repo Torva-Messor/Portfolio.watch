@@ -848,32 +848,33 @@ export class WatchViewer {
       let displacementRoot;
       const Z_EXPLODE_FACTOR = 10;
       if (isMl01) {
-        // Keep the base plate as a stable datum. Other top-level CAD units move
-        // along the model's thickness axis (Z); their original X/Y arrangement is
-        // preserved, which reads as a watchmaker's layer-by-layer exploded view.
-        if (componentMatches(partName(part), 'mainPlate')) {
-          part.userData.explodeVector = new THREE.Vector3();
-          return;
-        }
-        
-        const axialOffset = partCenter.z - movementCenter.z;
-        const axialThreshold = movementSpan * 0.012;
-        const axialDirection = Math.abs(axialOffset) > axialThreshold
-          ? Math.sign(axialOffset)
-          : (axialOffset < 0 ? -1 : 1);
-        const axialDistance = movementSpan * 0.11 + Math.abs(axialOffset) * 0.65;    
-          displacementRoot = new THREE.Vector3(
-          radial.x * 0.30,
-          radial.y * 0.75,
-          axialDirection * axialDistance * Z_EXPLODE_FACTOR
-          );
-      } else {
-        
-        displacementRoot = new THREE.Vector3(
-          radial.x * 0.75,
-          radial.y * 0.75,
-          radial.z * Z_EXPLODE_FACTOR
-        ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
+  // Keep the base plate fixed
+  if (componentMatches(partName(part), 'mainPlate')) {
+    part.userData.explodeVector = new THREE.Vector3();
+    return;
+  }
+
+  const Z_EXPLODE_FACTOR = 10;
+  const axialOffset = partCenter.z - movementCenter.z;
+  const axialThreshold = movementSpan * 0.012;
+  const axialDirection = Math.abs(axialOffset) > axialThreshold
+    ? Math.sign(axialOffset)
+    : (axialOffset < 0 ? -1 : 1);
+  const axialDistance = movementSpan * 0.11 + Math.abs(axialOffset) * 0.65;
+
+  displacementRoot = new THREE.Vector3(
+    radial.x * 0.30,
+    radial.y * 0.75 * (EXPLODE_SPREAD_FACTOR - 1), // Match else Y scaling
+    axialDirection * axialDistance * Z_EXPLODE_FACTOR
+  );
+
+} else {
+  displacementRoot = new THREE.Vector3(
+    radial.x * 0.75,
+    radial.y * 0.75,
+    radial.z * Z_EXPLODE_FACTOR
+  ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
+      }
 
         // Existing behavior for concentric parts in the original models.
         if (radial.length() < nearCenterThreshold) {
