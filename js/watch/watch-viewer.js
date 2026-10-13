@@ -860,8 +860,12 @@ export class WatchViewer {
         const axialDirection = Math.abs(axialOffset) > axialThreshold
           ? Math.sign(axialOffset)
           : (axialOffset < 0 ? -1 : 1);
-        const axialDistance = movementSpan * 0.11 + Math.abs(axialOffset) * 0.65;
-        displacementRoot = new THREE.Vector3(0, 0, axialDirection * axialDistance);
+        const axialDistance = movementSpan * 0.11 + Math.abs(axialOffset) * 0.65;    
+          displacementRoot = new THREE.Vector3(
+          radial.x * 0.30,
+          radial.y * 0.75,
+          axialDirection * axialDistance
+          );
       } else {
         const Z_EXPLODE_FACTOR = 10;
         displacementRoot = new THREE.Vector3(
