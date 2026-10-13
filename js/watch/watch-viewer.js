@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { componentMatches, componentLabelForName, componentDescriptionForName } from './component-aliases.js';
 
 const TAU = Math.PI * 2;
 const EXPLODE_SPREAD_FACTOR = 2.25;
@@ -795,9 +796,9 @@ export class WatchViewer {
   }
 
   _capturePartState() {
-    // Explode is a proportional 3D dilation around the movement's centre, not a
-    // stack of axial layers. Every selectable object keeps its rotation and shape;
-    // its centroid moves farther from the centre by the same scale factor.
+    // Existing watch models use radial dilation. ML01 is a dense hierarchical CAD
+    // assembly, so its top-level subassemblies are separated axially instead of
+    // pushing every individual screw and jewel outward in a radial cloud.
     this.root.updateMatrixWorld(true);
     const partName = part => part.userData.part || part.name || '';
     const boundsInRoot = object => {
@@ -816,7 +817,7 @@ export class WatchViewer {
       return result;
     };
 
-    const datumParts = this.parts.filter(part => /main plate/i.test(partName(part)));
+    const datumParts = this.parts.filter(part => componentMatches(partName(part), 'mainPlate'));
     const datumBounds = datumParts.reduce((combined, part) => {
       const bounds = boundsInRoot(part);
       if (bounds) combined.union(bounds);
@@ -829,6 +830,7 @@ export class WatchViewer {
     const movementSpan = Math.max(movementSize.x, movementSize.y, movementSize.z, 1);
     const nearCenterThreshold = movementSpan * 0.045;
     const goldenAngle = 2.399963229728653;
+    const isMl01 = this.modelType === 'ml01';
 
     this.parts.forEach((part, index) => {
       part.userData.basePosition = part.position.clone();
@@ -843,50 +845,47 @@ export class WatchViewer {
 
       const partCenter = bounds.getCenter(new THREE.Vector3());
       const radial = partCenter.clone().sub(movementCenter);
-      const Z_EXPLODE_FACTOR = 10; // Increase for more depth
+      let displacementRoot;
 
+      if (isMl01) {
+        // Keep the base plate as a stable datum. Other top-level CAD units move
+        // along the model's thickness axis (Z); their original X/Y arrangement is
+        // preserved, which reads as a watchmaker's layer-by-layer exploded view.
+        if (componentMatches(partName(part), 'mainPlate')) {
+          part.userData.explodeVector = new THREE.Vector3();
+          return;
+        }
+        const axialOffset = partCenter.z - movementCenter.z;
+        const axialThreshold = movementSpan * 0.012;
+        const axialDirection = Math.abs(axialOffset) > axialThreshold
+          ? Math.sign(axialOffset)
+          : (axialOffset < 0 ? -1 : 1);
+        const axialDistance = movementSpan * 0.11 + Math.abs(axialOffset) * 0.65;
+        displacementRoot = new THREE.Vector3(0, 0, axialDirection * axialDistance);
+      } else {
+        const Z_EXPLODE_FACTOR = 10;
+        displacementRoot = new THREE.Vector3(
+          radial.x * 0.75,
+          radial.y * 0.75,
+          radial.z * Z_EXPLODE_FACTOR
+        ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
-const isMl01 = this.modelType === 'ml01';
+        // Existing behavior for concentric parts in the original models.
+        if (radial.length() < nearCenterThreshold) {
+          const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
+          const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
+          const direction = new THREE.Vector3(
+            Math.cos(index * goldenAngle) * horizontalRadius,
+            Math.sin(index * goldenAngle) * horizontalRadius,
+            vertical
+          ).normalize();
+          const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
+          displacementRoot.addScaledVector(direction, nudge);
+        }
+      }
 
-let displacementRoot;
-
-if (isMl01) {
-  displacementRoot = new THREE.Vector3(
-    radial.x * 0.30,
-    radial.y * 0.30,
-    radial.z * 1.5
-  ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
-} else {
-  const Z_EXPLODE_FACTOR = 10;
-
-  displacementRoot = new THREE.Vector3(
-    radial.x * 0.75,
-    radial.y * 0.75,
-    radial.z * Z_EXPLODE_FACTOR
-  ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
-}
-
-if (!isMl01 && radial.length() < nearCenterThreshold) {
-  const vertical =
-    1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
-
-  const horizontalRadius = Math.sqrt(
-    Math.max(0, 1 - vertical * vertical)
-  );
-
-  const direction = new THREE.Vector3(
-    Math.cos(index * goldenAngle) * horizontalRadius,
-    Math.sin(index * goldenAngle) * horizontalRadius,
-    vertical
-  ).normalize();
-
-  const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
-  displacementRoot.addScaledVector(direction, nudge);
-}
-
-
-      // Calculate the same root-space translation in each object's parent space.
-      // This also works for CAD nodes nested beneath scaled GLTF groups.
+      // Convert the root-space translation into this part's parent coordinate
+      // system so nested CAD transforms and scales remain respected.
       const worldOrigin = part.getWorldPosition(new THREE.Vector3());
       const rootOrigin = this.root.worldToLocal(worldOrigin.clone());
       const targetRoot = rootOrigin.add(displacementRoot);
@@ -957,10 +956,9 @@ if (!isMl01 && radial.length() < nearCenterThreshold) {
     // Every bundled CAD conversion is served from this site. No dead external
     // inspector route and no third-party runtime model URLs are needed.
     const bundledModels = {
-      'ml01': new URL(
-      '../../models/001_ml01_Werk_montiert_einbaufertig.glb', import.meta.url).href,
       'eta-6497-1': new URL('../../models/ETA-6497-1-Movement-Gold-Jewels.glb', import.meta.url).href,
-      'seiko-nh35': new URL('../../models/Seiko-NH35-Movement.glb', import.meta.url).href
+      'seiko-nh35': new URL('../../models/Seiko-NH35-Movement.glb', import.meta.url).href,
+      'ml01': new URL('../../models/001_ml01_Werk_montiert_einbaufertig.glb', import.meta.url).href
     };
     const modelUrl = bundledModels[key];
     if (!modelUrl) {
@@ -1013,18 +1011,33 @@ if (!isMl01 && radial.length() < nearCenterThreshold) {
       // Fit to the actual calibre body, not the optional winding stem. The stem is
       // retained, but it must not dictate the camera scale or shove the movement off-screen.
       model.updateMatrixWorld(true);
-      let mainPlate = null;
+      let mainPlateMesh = null;
+      let mainPlateGroup = null;
+      let ml01AssemblyRoot = null;
       model.traverse(object => {
-        if (!mainPlate && object.isMesh && /main plate/i.test(object.name || '')) mainPlate = object;
+        const objectName = object.name || '';
+        if (movementKey === 'ml01' && !ml01AssemblyRoot && componentMatches(objectName, 'movementAssembly')) {
+          ml01AssemblyRoot = object;
+        }
+        if (componentMatches(objectName, 'mainPlate')) {
+          if (object.isMesh && !mainPlateMesh) mainPlateMesh = object;
+          if (!object.isMesh && object.children?.length && !mainPlateGroup) mainPlateGroup = object;
+        }
       });
+      // ML01's German CAD hierarchy names its base-plate assembly "Werkplatte".
+      // Use that group's bounds for framing; other models continue to prefer their
+      // actual main-plate mesh so their existing framing and split-plate behavior stay intact.
+      const mainPlate = movementKey === 'ml01'
+        ? (mainPlateGroup || mainPlateMesh)
+        : (mainPlateMesh || mainPlateGroup);
       const overallBounds = new THREE.Box3().setFromObject(model);
       const anchorBounds = mainPlate ? new THREE.Box3().setFromObject(mainPlate) : overallBounds;
       const center = anchorBounds.getCenter(new THREE.Vector3());
       const size = anchorBounds.getSize(new THREE.Vector3());
       const maxDimension = Math.max(size.x, size.y, size.z) || 1;
-      // Make the main plate inspectable as four radial floating components in explode view.
-      // The original model remains assembled when explode is at zero.
-      if (mainPlate) {
+      // Do not sector-split the imported ML01 CAD plate: it is already a valid
+      // source assembly and splitting its geometry would destroy the CAD grouping.
+      if (mainPlate?.isMesh && movementKey !== 'ml01') {
         splitMainPlateMesh(mainPlate, 4);
       }
       const modelScale = 6.0 / maxDimension;
@@ -1049,17 +1062,38 @@ if (!isMl01 && radial.length() < nearCenterThreshold) {
       model.traverse(object => {
         if (object.isMesh) meshes.push(object);
       });
-      meshes.forEach((mesh, index) => {
-        const name = mesh.name?.trim() || `MODEL PART ${String(index + 1).padStart(2, '0')}`;
-        mesh.userData.part = name;
-        mesh.userData.description = movementKey === 'eta-6497-1'
-          ? 'Selectable component from the supplied ETA 6497-1 STEP reconstruction. Finish is a presentation material; this is not factory CAD.'
-          : movementKey === 'seiko-nh35'
-            ? 'Selectable solid from the supplied NH35 STEP reconstruction. Source part names were not verified; the finish is stylistic, not a factory material claim.'
-            : 'Selectable component in this movement study.';
-        mesh.userData.originalVisible = mesh.visible;
-        this.parts.push(mesh);
-      });
+
+      if (movementKey === 'ml01' && ml01AssemblyRoot) {
+        // The source GLB contains 222 leaf meshes beneath 82 meaningful top-level
+        // assembly units. Explode/select these units together, not every screw,
+        // jewel and sub-mesh independently; this prevents the CAD model scattering.
+        const containsMesh = node => {
+          let found = false;
+          node.traverse(child => { if (child.isMesh) found = true; });
+          return found;
+        };
+        ml01AssemblyRoot.children.filter(containsMesh).forEach((part, index) => {
+          const name = part.name?.trim() || `ML01 ASSEMBLY PART ${String(index + 1).padStart(2, '0')}`;
+          part.userData.part = name;
+          part.userData.displayName = componentLabelForName(name);
+          part.userData.description = componentDescriptionForName(name);
+          part.userData.originalVisible = part.visible;
+          this.parts.push(part);
+        });
+      } else {
+        meshes.forEach((mesh, index) => {
+          const name = mesh.name?.trim() || `MODEL PART ${String(index + 1).padStart(2, '0')}`;
+          mesh.userData.part = name;
+          mesh.userData.displayName = componentLabelForName(name);
+          mesh.userData.description = movementKey === 'eta-6497-1'
+            ? 'Selectable component from the supplied ETA 6497-1 STEP reconstruction. Finish is a presentation material; this is not factory CAD.'
+            : movementKey === 'seiko-nh35'
+              ? 'Selectable solid from the supplied NH35 STEP reconstruction. Source part names were not verified; the finish is stylistic, not a factory material claim.'
+              : 'Selectable component in this movement study.';
+          mesh.userData.originalVisible = mesh.visible;
+          this.parts.push(mesh);
+        });
+      }
       this.modelType = movementKey;
       this._capturePartState();
       const engine = document.querySelector('#watch-engine-label');
@@ -1073,6 +1107,9 @@ if (!isMl01 && radial.length() < nearCenterThreshold) {
         this._updateModelText(movementKey);
         if (engine) engine.textContent = 'GLB / NH35A COMMUNITY CAD';
         if (source) source.textContent = 'Converted from the supplied Marathon OS STEP model. It contains 13 separate solid bodies; several parts retain neutral body-index names because the source did not provide verified manufacturer part names. Materials are stylized presentation finishes. Validate against TMI documentation before engineering use.';
+      } else if (movementKey === 'ml01') {
+        if (engine) engine.textContent = 'GLB / ML01 ASSEMBLED CAD';
+        if (source) source.textContent = 'Imported German-language CAD assembly. Component subassemblies remain grouped for inspection and axial exploded-view separation; source names are preserved.';
       } else {
         this._updateModelText(movementKey);
       }
@@ -1195,8 +1232,9 @@ if (!isMl01 && radial.length() < nearCenterThreshold) {
   }
 
   _showSelection(part) {
-    const name = part.userData.part || part.name || 'COMPONENT';
-    const description = part.userData.description || this.describePart(name);
+    const sourceName = part.userData.part || part.name || 'COMPONENT';
+    const name = part.userData.displayName || componentLabelForName(sourceName);
+    const description = part.userData.description || this.describePart(sourceName);
     const selection = document.querySelector('#watch-selection');
     const component = document.querySelector('#watch-component');
     if (selection) {
@@ -1289,7 +1327,7 @@ if (!isMl01 && radial.length() < nearCenterThreshold) {
       if (!label) {
         label = document.createElement('span');
         label.className = 'watch-part-label';
-        label.textContent = part.userData.part || part.name || 'PART';
+        label.textContent = part.userData.displayName || componentLabelForName(part.userData.part || part.name || 'PART');
         this.labelLayer.append(label);
         this.labelsByPart.set(part, label);
       }
