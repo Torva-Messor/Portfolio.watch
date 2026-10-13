@@ -865,7 +865,7 @@ export class WatchViewer {
           displacementRoot = new THREE.Vector3(
           radial.x * 0.30,
           radial.y * 0.75,
-          axialDirection * axialDistance * Z_EXPLODE_FACTOR * 0.5
+          axialDirection * axialDistance * Z_EXPLODE_FACTOR
           );
       } else {
         
