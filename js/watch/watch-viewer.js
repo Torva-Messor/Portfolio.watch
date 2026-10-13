@@ -847,7 +847,7 @@ export class WatchViewer {
       const radial = partCenter.clone().sub(movementCenter);
       let displacementRoot;
 
-      if (isMl01) {
+      /*if (isMl01) {
         // Keep the base plate as a stable datum. Other top-level CAD units move
         // along the model's thickness axis (Z); their original X/Y arrangement is
         // preserved, which reads as a watchmaker's layer-by-layer exploded view.
@@ -867,7 +867,7 @@ export class WatchViewer {
           radial.y * 0.75,
           axialDirection * axialDistance * Z_EXPLODE_FACTOR
           );
-      } else {
+      } else {*/
         
         displacementRoot = new THREE.Vector3(
           radial.x * 0.75,
