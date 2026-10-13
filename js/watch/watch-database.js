@@ -1,7 +1,7 @@
 export const CALIBERS = {
   ml01: {
-  manufacturer: 'Unknown',
-  caliber: 'ML01',
+  manufacturer: 'ML01',
+  caliber: 'Mechanical Movement',
   type: 'Mechanical watch movement',
   diameter: 'Not specified',
   thickness: 'Not specified',

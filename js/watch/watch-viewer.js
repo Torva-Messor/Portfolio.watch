@@ -845,48 +845,44 @@ export class WatchViewer {
 
       const partCenter = bounds.getCenter(new THREE.Vector3());
       const radial = partCenter.clone().sub(movementCenter);
-      let displacementRoot;
+      let displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
       if (isMl01) {
-        // Keep the base plate as a stable datum. Other top-level CAD units move
-        // along the model's thickness axis (Z); their original X/Y arrangement is
-        // preserved, which reads as a watchmaker's layer-by-layer exploded view.
+        // Keep the base plate fixed as the assembly datum. Every other top-level
+        // part gets a 3D radial offset plus a small axial separation so the ML01
+        // does not collapse into a Z-only stack when exploded.
         if (componentMatches(partName(part), 'mainPlate')) {
           part.userData.explodeVector = new THREE.Vector3();
           return;
         }
-        const Z_EXPLODE_FACTOR = 10;
-        const axialOffset = partCenter.z - movementCenter.z;
-        const axialThreshold = movementSpan * 0.012;
-        const axialDirection = Math.abs(axialOffset) > axialThreshold
-          ? Math.sign(axialOffset)
-          : (axialOffset < 0 ? -1 : 1);
-        const axialDistance = movementSpan * 0.11 + Math.abs(axialOffset) * 0.65;    
-          displacementRoot = new THREE.Vector3(
-          radial.x * 0.30,
-          radial.y * 0.75,
-          axialDirection * axialDistance * Z_EXPLODE_FACTOR
-          );
-      } else {
-        
-        displacementRoot = new THREE.Vector3(
-          radial.x * 0.75,
-          radial.y * 0.75,
-          radial.z * Z_EXPLODE_FACTOR
-        ).multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
-        // Existing behavior for concentric parts in the original models.
-        if (radial.length() < nearCenterThreshold) {
-          const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
-          const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
-          const direction = new THREE.Vector3(
-            Math.cos(index * goldenAngle) * horizontalRadius,
-            Math.sin(index * goldenAngle) * horizontalRadius,
-            vertical
-          ).normalize();
-          const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
-          displacementRoot.addScaledVector(direction, nudge);
-        }
+        const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
+        const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
+        const direction = new THREE.Vector3(
+          Math.cos(index * goldenAngle) * horizontalRadius,
+          Math.sin(index * goldenAngle) * horizontalRadius,
+          vertical
+        ).normalize();
+        // The deterministic 3D nudge also separates coaxial/stacked CAD parts
+        // whose centroids share nearly identical X/Y coordinates.
+        displacementRoot.addScaledVector(direction, movementSpan * (0.075 + (index % 4) * 0.012));
+
+        const axialOffset = partCenter.z - movementCenter.z;
+        const axialDirection = Math.abs(axialOffset) > movementSpan * 0.012
+          ? Math.sign(axialOffset)
+          : (vertical < 0 ? -1 : 1);
+        displacementRoot.z += axialDirection * (movementSpan * 0.075 + Math.abs(axialOffset) * 0.25);
+      } else if (radial.length() < nearCenterThreshold) {
+        // Concentric components still need a deterministic 3D separation vector.
+        const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
+        const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
+        const direction = new THREE.Vector3(
+          Math.cos(index * goldenAngle) * horizontalRadius,
+          Math.sin(index * goldenAngle) * horizontalRadius,
+          vertical
+        ).normalize();
+        const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
+        displacementRoot.addScaledVector(direction, nudge);
       }
 
       // Convert the root-space translation into this part's parent coordinate
