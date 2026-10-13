@@ -844,46 +844,56 @@ export class WatchViewer {
       }
 
       const partCenter = bounds.getCenter(new THREE.Vector3());
-      const radial = partCenter.clone().sub(movementCenter);
-      let displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
+const radial = partCenter.clone().sub(movementCenter);
+let displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
-      if (isMl01) {
-        // Keep the base plate fixed as the assembly datum. Every other top-level
-        // part gets a 3D radial offset plus a small axial separation so the ML01
-        // does not collapse into a Z-only stack when exploded.
-        if (componentMatches(partName(part), 'mainPlate')) {
-          part.userData.explodeVector = new THREE.Vector3();
-          return;
-        }
+if (isMl01) {
+  // Keep the main plate fixed as the assembly datum.
+  if (componentMatches(partName(part), 'mainPlate')) {
+    part.userData.explodeVector = new THREE.Vector3();
+    return;
+  }
 
-        const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
-        const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
-        const direction = new THREE.Vector3(
-          Math.cos(index * goldenAngle) * horizontalRadius,
-          Math.sin(index * goldenAngle) * horizontalRadius,
-          vertical
-        ).normalize();
-        // The deterministic 3D nudge also separates coaxial/stacked CAD parts
-        // whose centroids share nearly identical X/Y coordinates.
-        displacementRoot.addScaledVector(direction, movementSpan * (0.075 + (index % 4) * 0.012));
+  // Spread mainly along Z, with very little X/Y movement.
+  const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
+  const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
 
-        const axialOffset = partCenter.z - movementCenter.z;
-        const axialDirection = Math.abs(axialOffset) > movementSpan * 0.012
-          ? Math.sign(axialOffset)
-          : (vertical < 0 ? -1 : 1);
-        displacementRoot.z += axialDirection * (movementSpan * 0.075 + Math.abs(axialOffset) * 0.25);
-      } else if (radial.length() < nearCenterThreshold) {
-        // Concentric components still need a deterministic 3D separation vector.
-        const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
-        const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
-        const direction = new THREE.Vector3(
-          Math.cos(index * goldenAngle) * horizontalRadius,
-          Math.sin(index * goldenAngle) * horizontalRadius,
-          vertical
-        ).normalize();
-        const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
-        displacementRoot.addScaledVector(direction, nudge);
-      }
+  const direction = new THREE.Vector3(
+    Math.cos(index * goldenAngle) * horizontalRadius * 0.08,
+    Math.sin(index * goldenAngle) * horizontalRadius * 0.08,
+    vertical * 2.5
+  ).normalize();
+
+  // Small 3D offset to keep overlapping parts separated.
+  displacementRoot.addScaledVector(
+    direction,
+    movementSpan * (0.12 + (index % 4) * 0.025)
+  );
+
+  // Stronger separation along the Z axis.
+  const axialOffset = partCenter.z - movementCenter.z;
+  const axialDirection = Math.abs(axialOffset) > movementSpan * 0.012
+    ? Math.sign(axialOffset)
+    : (vertical < 0 ? -1 : 1);
+
+  displacementRoot.z += axialDirection * (
+    movementSpan * 0.25 + Math.abs(axialOffset) * 0.5
+  );
+
+} else if (radial.length() < nearCenterThreshold) {
+  // Concentric components still need deterministic 3D separation.
+  const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
+  const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
+
+  const direction = new THREE.Vector3(
+    Math.cos(index * goldenAngle) * horizontalRadius,
+    Math.sin(index * goldenAngle) * horizontalRadius,
+    vertical
+  ).normalize();
+
+  const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
+  displacementRoot.addScaledVector(direction, nudge);
+}
 
       // Convert the root-space translation into this part's parent coordinate
       // system so nested CAD transforms and scales remain respected.
