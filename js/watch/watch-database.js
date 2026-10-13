@@ -1,4 +1,20 @@
 export const CALIBERS = {
+  ml01: {
+  manufacturer: 'Unknown',
+  caliber: 'ML01',
+  type: 'Mechanical watch movement',
+  diameter: 'Not specified',
+  thickness: 'Not specified',
+  beatRate: 'Not specified',
+  jewels: 'Not specified',
+  powerReserve: 'Not specified',
+  winding: 'Not specified',
+  complications: 'Not specified',
+  model: '001_ml01_Werk_montiert_einbaufertig',
+  assembly: 'Assembled',
+  installationReady: true,
+  source: 'User-supplied GLB model'
+  },
   'eta-6497-1': {
     manufacturer: 'ETA / Unitas',
     caliber: '6497-1',
