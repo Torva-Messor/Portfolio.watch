@@ -861,11 +861,13 @@ export class WatchViewer {
         const axialDirection = Math.abs(axialOffset) > axialThreshold
           ? Math.sign(axialOffset)
           : (index % 2 === 0 ? -1 : 1);
-        const axialDistance = movementSpan * 0.10 + Math.abs(axialOffset) * 0.45;
+        const axialDistance = movementSpan * 0.16 + Math.abs(axialOffset) * 0.55;
 
-        // Keep a small amount of the original in-plane offset only, avoiding
-        // the previous exaggerated lateral spread and randomized directions.
-        displacementRoot.set(radial.x * 0.08, radial.y * 0.08, axialDirection * axialDistance);
+        // Separate the CAD layers in all three axes. Keep lateral movement
+        // proportional to each part's face-plane position, while Z remains
+        // the dominant axis so bridges, gears and screws visibly hover apart.
+        // The axial direction is deterministic to avoid frame-to-frame drift.
+        displacementRoot.set(radial.x * 0.24, radial.y * 0.24, axialDirection * axialDistance);
       } else if (radial.length() < nearCenterThreshold) {
         // Concentric components still need a deterministic 3D separation vector.
         const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
