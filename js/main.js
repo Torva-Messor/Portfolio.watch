@@ -44,7 +44,7 @@ async function openWatchLab(event) {
   if (!watchViewer) {
     if (!watchLoading) {
       watchLoading = Promise.all([
-        import('./watch/watch-viewer.js?v=20261013-3d-explode-fix'),
+        import('./watch/watch-viewer.js?v=20261014-universal-thickness-fan'),
         import('./watch/watch-controls.js?v=20261013-3d-explode-fix')
       ])
         .then(async ([viewerModule, controlsModule]) => {
