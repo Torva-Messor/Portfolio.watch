@@ -848,30 +848,24 @@ export class WatchViewer {
       let displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
       if (isMl01) {
-        // Keep the base plate fixed as the assembly datum. Every other top-level
-        // part gets a 3D radial offset plus a small axial separation so the ML01
-        // does not collapse into a Z-only stack when exploded.
+        // Zweigesicht-style exploded view: preserve each component's face-plane
+        // position and separate layers along the movement's thickness axis.
+        // The main plate is the fixed datum; do not add index-based/random XY drift.
         if (componentMatches(partName(part), 'mainPlate')) {
           part.userData.explodeVector = new THREE.Vector3();
           return;
         }
 
-        const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
-        const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
-        const direction = new THREE.Vector3(
-          Math.cos(index * goldenAngle) * horizontalRadius,
-          Math.sin(index * goldenAngle) * horizontalRadius,
-          vertical
-        ).normalize();
-        // The deterministic 3D nudge also separates coaxial/stacked CAD parts
-        // whose centroids share nearly identical X/Y coordinates.
-        displacementRoot.addScaledVector(direction, movementSpan * (0.075 + (index % 4) * 0.012));
-
         const axialOffset = partCenter.z - movementCenter.z;
-        const axialDirection = Math.abs(axialOffset) > movementSpan * 0.012
+        const axialThreshold = movementSpan * 0.012;
+        const axialDirection = Math.abs(axialOffset) > axialThreshold
           ? Math.sign(axialOffset)
-          : (vertical < 0 ? -1 : 1);
-        displacementRoot.z += axialDirection * (movementSpan * 0.075 + Math.abs(axialOffset) * 0.25);
+          : (index % 2 === 0 ? -1 : 1);
+        const axialDistance = movementSpan * 0.10 + Math.abs(axialOffset) * 0.45;
+
+        // Keep a small amount of the original in-plane offset only, avoiding
+        // the previous exaggerated lateral spread and randomized directions.
+        displacementRoot.set(radial.x * 0.08, radial.y * 0.08, axialDirection * axialDistance);
       } else if (radial.length() < nearCenterThreshold) {
         // Concentric components still need a deterministic 3D separation vector.
         const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
