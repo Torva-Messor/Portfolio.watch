@@ -849,17 +849,16 @@ export class WatchViewer {
       let displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
       if (isEta6497) {
-        // Axial-first exploded view for the ETA 6497 family: make the movement
-        // dramatically deeper while preserving each component's XY registration.
-        // Components already offset in Z keep their layer direction; coplanar
-        // components alternate deterministically to form a readable stack.
+        // Fan the ETA 6497 family into a continuous axial stack instead of
+        // splitting it into just two slabs. Each imported component gets its
+        // own deterministic depth slot; XY registration stays mostly fixed, with a small amount of face-plane movement.
+        // Preserve a little of the source CAD depth so nearby parts still read
+        // as related subassemblies while the exploded stack remains continuous.
         const axialOffset = partCenter.z - movementCenter.z;
-        const axialThreshold = movementSpan * 0.012;
-        const axialDirection = Math.abs(axialOffset) > axialThreshold
-          ? Math.sign(axialOffset)
-          : (index % 2 === 0 ? -1 : 1);
-        const axialDistance = movementSpan * 0.42 + Math.abs(axialOffset) * 0.85;
-        displacementRoot.set(radial.x * 0.045, radial.y * 0.045, axialDirection * axialDistance);
+        const partCount = Math.max(1, this.parts.length - 1);
+        const depthProgress = index / partCount - 0.5;
+        const axialDistance = depthProgress * movementSpan * 1.7 + axialOffset * 0.18;
+        displacementRoot.set(radial.x * 0.085, radial.y * 0.085, axialDistance);
       } else if (isMl01) {
         // Zweigesicht-style exploded view: preserve each component's face-plane
         // position and separate layers along the movement's thickness axis.
