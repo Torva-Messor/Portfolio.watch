@@ -831,6 +831,7 @@ export class WatchViewer {
     const nearCenterThreshold = movementSpan * 0.045;
     const goldenAngle = 2.399963229728653;
     const isMl01 = this.modelType === 'ml01';
+    const isEta6497 = this.modelType === 'eta-6497-1' || this.modelType === 'eta-6498-1';
 
     this.parts.forEach((part, index) => {
       part.userData.basePosition = part.position.clone();
@@ -847,7 +848,19 @@ export class WatchViewer {
       const radial = partCenter.clone().sub(movementCenter);
       let displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
 
-      if (isMl01) {
+      if (isEta6497) {
+        // Axial-first exploded view for the ETA 6497 family: make the movement
+        // dramatically deeper while preserving each component's XY registration.
+        // Components already offset in Z keep their layer direction; coplanar
+        // components alternate deterministically to form a readable stack.
+        const axialOffset = partCenter.z - movementCenter.z;
+        const axialThreshold = movementSpan * 0.012;
+        const axialDirection = Math.abs(axialOffset) > axialThreshold
+          ? Math.sign(axialOffset)
+          : (index % 2 === 0 ? -1 : 1);
+        const axialDistance = movementSpan * 0.42 + Math.abs(axialOffset) * 0.85;
+        displacementRoot.set(radial.x * 0.045, radial.y * 0.045, axialDirection * axialDistance);
+      } else if (isMl01) {
         // Zweigesicht-style exploded view: preserve each component's face-plane
         // position and separate layers along the movement's thickness axis.
         // The main plate is the fixed datum; do not add index-based/random XY drift.
