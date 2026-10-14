@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { componentMatches, componentLabelForName, componentDescriptionForName } from './component-aliases.js';
 
 const TAU = Math.PI * 2;
-const EXPLODE_SPREAD_FACTOR = 2.25;
+const EXPLODE_SPREAD_FACTOR = 2.5;
 const PRESSURE_ANGLE = 20 * Math.PI / 180;
 const COLORS = {
   steel: 0x555650,
@@ -796,26 +796,39 @@ export class WatchViewer {
   }
 
   _capturePartState() {
-    // Existing watch models use radial dilation. ML01 moves its top-level CAD
-    // subassemblies outward across the watch face while adding a modest axial
-    // offset, matching the layered exploded view of the Zweigesicht reference.
+    // Build one shared, thickness-first exploded view for every imported model.
+    // Do not hard-code the depth axis by caliber: source CAD files use different
+    // coordinate conventions (for example, ML01 is thin along Y while ETA/NH35
+    // are thin along Z). The thinnest dimension of the assembled bounds is the
+    // most reliable axis for the axial fan.
     this.root.updateMatrixWorld(true);
+
     const partName = part => part.userData.part || part.name || '';
     const boundsInRoot = object => {
+      if (!object) return null;
       const world = new THREE.Box3().setFromObject(object);
       if (world.isEmpty()) return null;
-      const points = [];
+      const result = new THREE.Box3().makeEmpty();
       for (const x of [world.min.x, world.max.x]) {
         for (const y of [world.min.y, world.max.y]) {
           for (const z of [world.min.z, world.max.z]) {
-            points.push(this.root.worldToLocal(new THREE.Vector3(x, y, z)));
+            result.expandByPoint(this.root.worldToLocal(new THREE.Vector3(x, y, z)));
           }
         }
       }
-      const result = new THREE.Box3().makeEmpty();
-      points.forEach(point => result.expandByPoint(point));
       return result;
     };
+
+    const assemblyBounds = boundsInRoot(this.remoteModel || this.root);
+    if (!assemblyBounds || assemblyBounds.isEmpty()) {
+      this.parts.forEach(part => {
+        part.userData.basePosition = part.position.clone();
+        part.userData.baseRotation = part.rotation.clone();
+        part.userData.originalVisible = part.visible;
+        part.userData.explodeVector = new THREE.Vector3();
+      });
+      return;
+    }
 
     const datumParts = this.parts.filter(part => componentMatches(partName(part), 'mainPlate'));
     const datumBounds = datumParts.reduce((combined, part) => {
@@ -824,77 +837,101 @@ export class WatchViewer {
       return combined;
     }, new THREE.Box3().makeEmpty());
     const hasDatum = !datumBounds.isEmpty();
-    const assemblyBounds = boundsInRoot(this.remoteModel || this.root) || new THREE.Box3().setFromObject(this.root);
     const movementCenter = (hasDatum ? datumBounds : assemblyBounds).getCenter(new THREE.Vector3());
-    const movementSize = assemblyBounds.getSize(new THREE.Vector3());
-    const movementSpan = Math.max(movementSize.x, movementSize.y, movementSize.z, 1);
-    const nearCenterThreshold = movementSpan * 0.045;
+    const assemblySize = assemblyBounds.getSize(new THREE.Vector3());
+    const axisNames = ['x', 'y', 'z'];
+    const thicknessAxis = axisNames.reduce((smallestAxis, axis, index, axes) => {
+      const candidateSize = assemblySize[axis];
+      const smallestSize = assemblySize[axes[smallestAxis]];
+      return candidateSize < smallestSize ? index : smallestAxis;
+    }, 0);
+    const faceAxes = axisNames.map((_, index) => index).filter(index => index !== thicknessAxis);
+    const faceSpan = Math.max(assemblySize[axisNames[faceAxes[0]]], assemblySize[axisNames[faceAxes[1]]], 1e-3);
+    const thicknessName = axisNames[thicknessAxis];
+    const faceNameA = axisNames[faceAxes[0]];
+    const faceNameB = axisNames[faceAxes[1]];
     const goldenAngle = 2.399963229728653;
-    const isMl01 = this.modelType === 'ml01';
-    const isEta6497 = this.modelType === 'eta-6497-1' || this.modelType === 'eta-6498-1';
 
-    this.parts.forEach((part, index) => {
+    const records = [];
+    this.parts.forEach((part, sourceIndex) => {
       part.userData.basePosition = part.position.clone();
       part.userData.baseRotation = part.rotation.clone();
       part.userData.originalVisible = part.visible;
 
       const bounds = boundsInRoot(part);
-      if (!bounds) {
+      if (!bounds || bounds.isEmpty()) {
         part.userData.explodeVector = new THREE.Vector3();
         return;
       }
 
-      const partCenter = bounds.getCenter(new THREE.Vector3());
-      const radial = partCenter.clone().sub(movementCenter);
-      let displacementRoot = radial.clone().multiplyScalar(EXPLODE_SPREAD_FACTOR - 1);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const radial = center.clone().sub(movementCenter);
+      const faceX = radial[faceNameA];
+      const faceY = radial[faceNameB];
+      const faceRadius = Math.hypot(faceX, faceY);
+      const angle = faceRadius > faceSpan * 0.015
+        ? Math.atan2(faceY, faceX)
+        : sourceIndex * goldenAngle;
+      records.push({
+        part,
+        sourceIndex,
+        bounds,
+        center,
+        radial,
+        depth: center[thicknessName],
+        faceRadius,
+        angle,
+        axialSize: bounds.getSize(new THREE.Vector3())[thicknessName],
+        name: partName(part)
+      });
+    });
 
-      if (isEta6497) {
-        // Fan the ETA 6497 family into a continuous axial stack instead of
-        // splitting it into just two slabs. Each imported component gets its
-        // own deterministic depth slot; XY registration stays mostly fixed, with a small amount of face-plane movement.
-        // Preserve a little of the source CAD depth so nearby parts still read
-        // as related subassemblies while the exploded stack remains continuous.
-        const axialOffset = partCenter.z - movementCenter.z;
-        const partCount = Math.max(1, this.parts.length - 1);
-        const depthProgress = index / partCount - 0.5;
-        const axialDistance = depthProgress * movementSpan * 1.7 + axialOffset * 0.18;
-        displacementRoot.set(radial.x * 0.085, radial.y * 0.085, axialDistance);
-      } else if (isMl01) {
-        // Zweigesicht-style exploded view: preserve each component's face-plane
-        // position and separate layers along the movement's thickness axis.
-        // The main plate is the fixed datum; do not add index-based/random XY drift.
-        if (componentMatches(partName(part), 'mainPlate')) {
-          part.userData.explodeVector = new THREE.Vector3();
-          return;
-        }
+    // Keep the imported model's natural depth ordering first. Components from
+    // the same source layer are ordered deterministically around the face so
+    // they fan into distinct slots instead of collapsing into two sign-based
+    // clusters or depending on arbitrary GLTF traversal order.
+    records.sort((a, b) =>
+      (a.depth - b.depth) ||
+      (a.angle - b.angle) ||
+      (a.faceRadius - b.faceRadius) ||
+      a.name.localeCompare(b.name) ||
+      (a.sourceIndex - b.sourceIndex)
+    );
 
-        const axialOffset = partCenter.z - movementCenter.z;
-        const axialThreshold = movementSpan * 0.012;
-        const axialDirection = Math.abs(axialOffset) > axialThreshold
-          ? Math.sign(axialOffset)
-          : (index % 2 === 0 ? -1 : 1);
-        const axialDistance = movementSpan * 0.16 + Math.abs(axialOffset) * 0.55;
+    const axialSizes = records.map(record => record.axialSize).filter(size => Number.isFinite(size) && size > 1e-5).sort((a, b) => a - b);
+    const medianAxialSize = axialSizes.length
+      ? axialSizes[Math.floor(axialSizes.length / 2)]
+      : faceSpan * 0.025;
+    const componentCount = records.length;
+    // Target a clearly visible but viewport-manageable fan. The median part
+    // thickness provides a lower bound for dense assemblies; faceSpan prevents
+    // small/flat CAD models from producing a nearly invisible explosion.
+    const fanHalfSpan = Math.max(
+      faceSpan * 0.78,
+      medianAxialSize * Math.max(0, componentCount - 1) * 0.58
+    );
+    const sourceDepthRetention = 0.14;
 
-        // Separate the CAD layers in all three axes. Keep lateral movement
-        // proportional to each part's face-plane position, while Z remains
-        // the dominant axis so bridges, gears and screws visibly hover apart.
-        // The axial direction is deterministic to avoid frame-to-frame drift.
-        displacementRoot.set(radial.x * 0.24, radial.y * 0.24, axialDirection * axialDistance);
-      } else if (radial.length() < nearCenterThreshold) {
-        // Concentric components still need a deterministic 3D separation vector.
-        const vertical = 1 - 2 * ((index + 0.5) / Math.max(1, this.parts.length));
-        const horizontalRadius = Math.sqrt(Math.max(0, 1 - vertical * vertical));
-        const direction = new THREE.Vector3(
-          Math.cos(index * goldenAngle) * horizontalRadius,
-          Math.sin(index * goldenAngle) * horizontalRadius,
-          vertical
-        ).normalize();
-        const nudge = movementSpan * (0.085 + (index % 4) * 0.018);
-        displacementRoot.addScaledVector(direction, nudge);
-      }
+    records.forEach((record, rank) => {
+      const { part, center, radial } = record;
+      const normalizedRank = componentCount <= 1 ? 0 : (rank / (componentCount - 1)) * 2 - 1;
+      const sourceDepthOffset = center[thicknessName] - movementCenter[thicknessName];
+      const axialDistance = normalizedRank * fanHalfSpan + sourceDepthOffset * sourceDepthRetention;
 
-      // Convert the root-space translation into this part's parent coordinate
-      // system so nested CAD transforms and scales remain respected.
+      // Preserve most of the face-plane registration. Add only a restrained
+      // radial nudge plus a tiny tangential offset, enough to uncover overlapping
+      // edges without scattering the movement sideways.
+      const tangentMagnitude = faceSpan * (0.016 + (rank % 3) * 0.006);
+      const tangentA = -Math.sin(record.angle) * tangentMagnitude;
+      const tangentB = Math.cos(record.angle) * tangentMagnitude;
+      const displacementRoot = new THREE.Vector3();
+      displacementRoot[thicknessName] = axialDistance;
+      displacementRoot[faceNameA] = radial[faceNameA] * 0.10 + tangentA;
+      displacementRoot[faceNameB] = radial[faceNameB] * 0.10 + tangentB;
+
+      // Convert the root-space vector to the component parent's local space.
+      // This preserves imported nested CAD transforms when setExplode animates
+      // the stored vector between the original and exploded positions.
       const worldOrigin = part.getWorldPosition(new THREE.Vector3());
       const rootOrigin = this.root.worldToLocal(worldOrigin.clone());
       const targetRoot = rootOrigin.add(displacementRoot);
@@ -903,6 +940,8 @@ export class WatchViewer {
       const baseParentPosition = parent.worldToLocal(worldOrigin.clone());
       const targetParentPosition = parent.worldToLocal(targetWorld);
       part.userData.explodeVector = targetParentPosition.sub(baseParentPosition);
+      part.userData.explodeAxis = thicknessName;
+      part.userData.explodeSlot = rank;
     });
   }
 
@@ -1017,9 +1056,28 @@ export class WatchViewer {
       }
 
       const model = gltf.scene;
+      // Normalize each CAD model's presentation orientation before framing it.
+      // ETA and NH35 are already thin along Z, while the supplied ML01 model is
+      // thin along Y. Align the smallest assembly-bounds axis with camera depth so
+      // every movement opens face-on in the same viewer orientation.
+      model.updateMatrixWorld(true);
+      const sourceBounds = new THREE.Box3().setFromObject(model);
+      const sourceSize = sourceBounds.getSize(new THREE.Vector3());
+      const sourceAxisNames = ['x', 'y', 'z'];
+      const sourceThicknessAxis = sourceAxisNames.reduce((smallestAxis, axis, index, axes) =>
+        sourceSize[axis] < sourceSize[axes[smallestAxis]] ? index : smallestAxis, 0);
+      if (sourceThicknessAxis !== 2) {
+        const sourceThicknessVector = new THREE.Vector3().setComponent(sourceThicknessAxis, 1);
+        const faceOnOrientation = new THREE.Quaternion().setFromUnitVectors(
+          sourceThicknessVector,
+          new THREE.Vector3(0, 0, 1)
+        );
+        model.quaternion.premultiply(faceOnOrientation);
+        model.updateMatrixWorld(true);
+      }
+
       // Fit to the actual calibre body, not the optional winding stem. The stem is
       // retained, but it must not dictate the camera scale or shove the movement off-screen.
-      model.updateMatrixWorld(true);
       let mainPlateMesh = null;
       let mainPlateGroup = null;
       let ml01AssemblyRoot = null;
