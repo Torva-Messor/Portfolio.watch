@@ -87,6 +87,28 @@
     }
   }
 
+  // The startup detector samples the WebGL drawing buffer to verify that a
+  // real game frame was rendered. By default, browsers may clear that buffer
+  // after compositing it, which can make readPixels() see only black pixels.
+  // Install this before loading the Emscripten runtime so its first WebGL
+  // context is created with preserveDrawingBuffer enabled.
+  function preserveGameDrawingBuffer() {
+    const originalGetContext = canvas.getContext.bind(canvas);
+    try {
+      canvas.getContext = function (type, attributes) {
+        if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+          return originalGetContext(type, {
+            ...(attributes || {}),
+            preserveDrawingBuffer: true
+          });
+        }
+        return originalGetContext(type, attributes);
+      };
+    } catch (error) {
+      console.warn('[WebDOOM] Could not wrap canvas.getContext; frame detection will use the browser default.', error);
+    }
+  }
+
   function hasRenderedGameFrame() {
     try {
       const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -146,6 +168,8 @@
     startupMessage.textContent = 'Loading the local WebAssembly engine and compressed shareware data. The first download is several megabytes; it stays on this page.';
     errorBox.hidden = true;
     setStatus('Loading engine assets…');
+
+    preserveGameDrawingBuffer();
 
     window.Module = {
       canvas,
