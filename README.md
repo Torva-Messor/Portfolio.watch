@@ -1,79 +1,143 @@
-# VOID / SYSTEMS — portfolio and interactive labs
 
-A static portfolio site with an animated silk substrate, project instruments, a 3D mechanical-watch viewer, a browser-local Air/Ground inventory prototype, a date-driven historical analysis lab, and an integrated WebDOOM / PrBoom-derived WebAssembly build.
+this is ai generated too lazy to write it
 
-## Included
 
-- Responsive portfolio sections, reduced-motion-aware silk rendering, keyboard-friendly navigation, and local asset paths.
-- **Watch Lab:** two bundled CAD conversions (ETA 6497-1 and TMI NH35A), component selection, isolation, labels, camera modes, playback, speed, lighting, reset and explode controls. These are visual reconstructions, not manufacturing-ready CAD.
-- **Product System:** a compact observation → test → evidence → decision feedback loop. Each action updates the diagram and state label; Reset restores the initial state.
-- **Air/Ground Stores:** browser-local add/edit/remove, search, store filter, stock status, record counts and CSV export. Sample records are fictional. Persistence uses this browser profile's `localStorage` where available; records are not shared between visitors or devices.
-- **Horology clock:** the analog hands and digital display use the visitor's device-local time and refresh after the tab becomes visible again.
-- **DOCK OF DOOM:** the supplied WebDOOM / PrBoom-derived JavaScript + WebAssembly engine, a shareware episode data package, keyboard/focus handling, fullscreen control, loading/error UI, and return-to-portfolio control. This integration is designed to load from a GitHub Pages project subpath; its actual game initialization was **not verified in the automated browser environment used for this package**. See [TEST-REPORT.md](TEST-REPORT.md) and [the Doom notice](licenses/WEBDOOM-NOTICE.md).
-- **Market Analysis:** an interactive historical chart with a date picker, a history slider, selected-observation marker, reference series, ζ-Field, analysis window, threshold and smoothing/memory controls, plus local CSV import.
+VOID / SYSTEMS
 
-## Market Analysis: provisional ζ-Field definition
+VOID / SYSTEMS is a personal portfolio built around interactive projects, technical experiments, and tools I've been working on. It combines a minimal interface with a few more complex features, including a 3D watch viewer, an inventory prototype, a historical data analysis tool, and a browser-based Doom port.
 
-The name **ζ-Field** is a project-specific indicator label. It is **not** the Riemann zeta function and is not a standard financial statistic. The bundled model is provisional and illustrative; it is not a validated trading signal.
+Projects
 
-Given a date-ordered reference series of values `P_t`:
+Watch Lab
 
-1. For an all-positive series, compute the change `x_t = 100 × ln(P_t / P_(t−1))`, a percentage log-return. If any value is zero or negative, consistently use `x_t = P_t − P_(t−1)` in the source series' units instead.
-2. With analysis window `w`, estimate `μ_t` and population standard deviation `σ_t` from the **previous `w` changes only**: `x_(t−w), …, x_(t−1)`. The current change is excluded from its own reference baseline.
-3. When a complete window exists and `σ_t` is greater than a small numerical tolerance, compute `z_t = (x_t − μ_t) / σ_t`. Otherwise the standardized value is unavailable. A zero-variance baseline is reported explicitly.
-4. Smooth the standardized surprise into the custom field: `ζ_t = (1 − λ) z_t + λ ζ_(t−1)`, where the **field memory** `λ` is constrained to `[0, 0.9]`. After unavailable history, the first valid observation seeds the field with `z_t`.
-5. The configurable threshold only produces a displayed research flag; no trade is executed or recommended.
+An interactive 3D viewer for two mechanical watch movements: the ETA 6497-1 and TMI NH35A.
 
-The default window is 20 prior changes; the UI allows 5–60. The threshold defaults to 1.5. Field memory defaults to 0.25. At least `w` prior changes are required before ζ can be calculated, so the first eligible observation is after the initial reference value plus `w` complete changes. Calculations are causal: changing future observations cannot change a previously calculated ζ-Field point.
+The viewer lets you inspect individual components, hide or isolate parts, toggle labels, change camera views, adjust lighting and playback speed, and use the explode and reset controls. The models are intended for visual exploration rather than manufacturing.
 
-The default monthly series from 2000–2024 is **synthetic demo data**, not real historical prices. CSV files are read in the browser and never uploaded. The first column is treated as date; numeric value columns after it can be selected. Parser support includes quoted CSV fields, comma/semicolon/tab separators, ISO dates, year-month dates, common European dates, and unambiguous US dates. European decimal-comma CSV generally uses semicolons between columns. Duplicate dates and invalid/missing dates are errors; missing or non-numeric values in the selected series are skipped with a count. Insufficient history and zero variance remain visibly unavailable rather than being filled with invented values.
+Product System
 
-## Doom data, technical constraints and licensing
+A small interactive system built around a simple feedback loop: observation, testing, evidence, and decision-making.
 
-`assets/doom/doom1.js` and `assets/doom/doom1.wasm` are the supplied browser runtime; `assets/doom/doom1.data.gz` contains the PrBoom support PWAD and DOOM shareware episode 1 WAD. Commercial DOOM II data and separate external soundtrack/effects packages were deliberately excluded. Use a current browser with WebAssembly, WebGL and the `DecompressionStream` gzip API, over HTTP(S), not `file://`. The first initialization loads the local engine package. No C# rewrite was made: retaining the existing browser-compatible WebAssembly engine avoids an unnecessary runtime, engine reimplementation and build dependency.
+Each action updates the diagram and its current state. Reset restores the initial setup.
 
-The WebDOOM project uses MIT-licensed wrapper code and includes PrBoom/DOOM source covered by GPL terms. Full upstream `LICENSE`, `COPYING`, source files and build metadata supplied in the original archive are preserved under `licenses/WebDOOM-source/`. See `licenses/WEBDOOM-NOTICE.md` and `THIRD-PARTY-NOTICES.md` before redistribution. The game WAD is separate from the engine; the shareware redistribution history is documented in the notice, but do not treat that note as blanket permission for every jurisdiction or commercial use. No commercial DOOM, DOOM II, TNT, Plutonia or Ultimate DOOM IWAD is included.
+Air/Ground Stores
 
-The original generated Emscripten engine glue has a small dated integration patch for the relative path and gzip preload wrapper. Its upstream provenance is retained rather than disguising the engine source. See the preserved corresponding source and licenses before making derivative changes.
+A browser-based inventory prototype for managing sample stock records.
 
-## Run locally
+Features include adding, editing and deleting records, searching, filtering by store, checking stock status, viewing record counts, and exporting data to CSV.
 
-No build step or backend is required. From this directory run:
+Records are stored in the browser's "localStorage" where available. They aren't shared between visitors or devices, and the included sample data is fictional.
 
-```bash
+Horology Clock
+
+An analog clock paired with a digital display, both based on the visitor's local device time. The display refreshes when the browser tab becomes visible again.
+
+Dock of Doom
+
+A Doom port integrated directly into the portfolio using a WebAssembly runtime derived from WebDOOM and PrBoom.
+
+The integration includes the game runtime, shareware episode data, loading and error screens, keyboard handling, fullscreen controls, and a way to return to the portfolio.
+
+Game initialization still needs to be verified in a real browser. The current implementation requires WebAssembly, WebGL, gzip support through "DecompressionStream", and an HTTP or HTTPS environment. Opening the site directly through "file://" isn't supported.
+
+Touchscreen controls also need separate consideration before the game can be considered fully playable on mobile.
+
+Commercial Doom game data isn't included. See the licensing notes below before redistributing the project.
+
+Market Analysis
+
+An interactive chart for exploring historical data over time.
+
+It includes date selection, a history slider, a selected-observation marker, a reference series, the custom ζ-Field indicator, configurable analysis windows and thresholds, smoothing controls, and CSV import.
+
+The default monthly dataset covering 2000–2024 is synthetic demo data, not real historical market data.
+
+About the ζ-Field
+
+The ζ-Field is a custom indicator developed for this project to experiment with historical data. It isn't the Riemann zeta function, a standard financial statistic, or a validated trading signal.
+
+The calculation compares each new change against a rolling window of previous changes, standardizes the result against that history, and smooths it using a configurable memory value.
+
+The calculation follows these steps:
+
+1. For an entirely positive series, calculate percentage log returns: "x_t = 100 × ln(P_t / P_(t−1))". If the series contains zero or negative values, use absolute changes instead: "x_t = P_t − P_(t−1)".
+2. Calculate the mean and population standard deviation using only the previous "w" changes. The current observation is excluded from its own baseline.
+3. Standardize the current change against that baseline when sufficient history is available and the standard deviation is above a small numerical tolerance.
+4. Smooth the standardized value using "ζ_t = (1 − λ) z_t + λ ζ_(t−1)".
+5. Display a research flag when the result crosses the configured threshold. The flag is informational and doesn't execute trades or provide trading recommendations.
+
+The default window is 20 previous changes, with a configurable range of 5–60. The default threshold is 1.5, and the default field memory is 0.25. Memory is limited to the range 0–0.9.
+
+The indicator needs a complete history window before it can calculate a value. If the history is insufficient or the baseline has zero variance, the result remains unavailable rather than being filled with an invented value. After an unavailable period, the first valid observation initializes the smoothed field.
+
+The calculations are causal: future observations don't affect previously calculated ζ-Field values.
+
+CSV import
+
+CSV files are processed locally in the browser and aren't uploaded to a server.
+
+The parser supports quoted fields, comma-, semicolon-, and tab-separated files, ISO dates, year-month dates, common European dates, and unambiguous US dates. The first column is treated as the date, and numeric columns after it can be selected for analysis.
+
+Duplicate dates and invalid or missing dates are rejected. Missing or non-numeric values in the selected series are skipped and counted. European decimal-comma files generally need semicolons as column separators.
+
+Running locally
+
+No build step or backend is required.
+
+You'll need Python installed. From the project directory, run:
+
 python -m http.server 8000
-```
 
-Then open <http://localhost:8000/>. ES modules, WebAssembly and model loading should be tested via HTTP(S), not `file://`.
+Then open "http://localhost:8000/" (http://localhost:8000/) in your browser.
 
-Three.js is pinned to `0.180.0` using a jsDelivr import map. The watch lab therefore needs network access to that CDN; the portfolio, market analysis, inventory, and bundled Doom runtime do not need a backend.
+Use a local HTTP server instead of opening "index.html" directly. This is important for ES modules, WebAssembly, and model loading.
 
-## Publish on GitHub Pages
+The Watch Lab uses Three.js "0.180.0" through a jsDelivr import map, so that feature requires an internet connection. The portfolio, inventory, market analysis, and bundled Doom runtime don't require a backend.
 
-1. Commit the contents of this folder to the repository root (or copy them into the configured `/docs` publish folder).
-2. In **Settings → Pages**, select the branch and folder that contains `index.html`.
-3. Keep the directory layout intact, particularly `assets/`, `css/`, `js/`, `models/`, and `licenses/`.
-4. Wait for the Pages deployment, then verify the published project URL, including its repository subpath. Do not rewrite relative asset URLs to `/assets/...` or `/js/...`.
-5. Check browser DevTools for network and WebAssembly errors. The actual Doom initialization remains a post-deployment smoke-check item; see `TEST-REPORT.md`.
+Publishing with GitHub Pages
 
-## Verification
+1. Commit the project files to the repository root, or to the configured "docs" publishing directory.
+2. Open Settings → Pages and select the branch and folder containing "index.html".
+3. Keep the directory structure intact, including "assets/", "css/", "js/", "models/", and "licenses/".
+4. Wait for the deployment to finish, then open the published project URL.
+5. Test the main features and check the browser console for missing assets, WebAssembly errors, and other loading issues.
 
-Requires Node.js 20+; no npm package install is required:
+Keep asset paths relative. Paths such as "/assets/" or "/js/" can break when the site is published under a GitHub Pages repository subpath.
 
-```bash
+A successful deployment doesn't guarantee that Doom initializes correctly. Test the game separately after publishing.
+
+Running the checks
+
+The project uses Node.js 20 or newer. The existing checks don't require an npm package installation.
+
 npm test
 npm run verify
 npm run check:syntax
-```
 
-- `npm test` runs the `node:test` suite for CSV handling, date parsing, missing/duplicate records, rolling-window boundaries, future-data exclusion, zero variance, memory smoothing, and runtime asset fingerprints.
-- `npm run verify` runs static architecture, component, Watch Lab and instrument checks.
-- `npm run check:syntax` checks project JavaScript plus Doom loader syntax.
-- `npm run smoke:browser` is an optional real-browser harness for Market Analysis, Product System, Air/Ground and Doom initialization if Chromium is available and operational. In the packaging environment Chromium launched but policy blocked navigation to the local HTTP test page (`ERR_BLOCKED_BY_ADMINISTRATOR`), so the browser test was blocked rather than passed; see `TEST-REPORT.md`.
+- "npm test" runs the automated tests for CSV handling, date parsing, missing and duplicate records, rolling-window calculations, future-data exclusion, zero variance, smoothing, and runtime asset fingerprints.
+- "npm run verify" checks the project structure and the main interface components, including the Watch Lab and interactive instruments.
+- "npm run check:syntax" checks the JavaScript files for syntax errors.
 
-## Attribution and other boundaries
+These checks help catch code and integration problems, but they don't replace testing in a real browser. Doom's startup and rendering still need to be verified on desktop and mobile.
 
-- Read `licenses/WEBDOOM-NOTICE.md`, `licenses/WebDOOM-source/LICENSE` and `licenses/WebDOOM-source/COPYING` before distributing the Doom integration.
-- Read `data/MODEL-SOURCES.md` before redistributing the bundled CAD conversions; check upstream model rights before any public redistribution.
-- The watch models are presentation assets. Do not treat their component names or nominal specifications as factory validation.
-- The portfolio/video reference `1000123590.mp4` was not present with the uploaded ZIPs. `VIDEO-ANNOTATION-CHECKLIST.md` records which written requests were implemented and which video-specific marks/deletions remain unverified.
+Licensing and third-party code
+
+The Doom integration uses MIT-licensed WebDOOM wrapper code and includes PrBoom/Doom source covered by GPL terms.
+
+The upstream source files, licenses, and build metadata supplied with the project are preserved under "licenses/WebDOOM-source/".
+
+Before redistributing the project, review:
+
+- "licenses/WEBDOOM-NOTICE.md"
+- "THIRD-PARTY-NOTICES.md"
+- The original license files under "licenses/WebDOOM-source/"
+
+The included game data contains the shareware episode 1 WAD and the required PrBoom support data. Commercial Doom, Doom II, TNT, Plutonia, and Ultimate Doom data are not included.
+
+The shareware redistribution history described in the project notices shouldn't be treated as blanket permission for every jurisdiction or commercial use.
+
+Notes
+
+This project brings together several different experiments in one portfolio, so individual features have different levels of completeness. In particular, the Doom integration still needs real-browser testing, and the 3D watch models are visual reconstructions rather than manufacturing-ready CAD.
+
+The goal is to keep the site self-contained where possible, make the interactive parts easy to explore, and document the limitations instead of hiding them.
