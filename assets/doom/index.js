@@ -87,47 +87,58 @@
     }
   }
 
-  // The startup detector samples the WebGL drawing buffer to verify that a
-  // real game frame was rendered. By default, browsers may clear that buffer
-  // after compositing it, which can make readPixels() see only black pixels.
-  // Install this before loading the Emscripten runtime so its first WebGL
-  // context is created with preserveDrawingBuffer enabled.
-  function preserveGameDrawingBuffer() {
+  // Track actual WebGL drawing activity. Pixel readback is unreliable for
+  // some browser/compositor configurations and can report black even when the
+  // engine is drawing. Install the tracker before loading Emscripten.
+  let webglDrawCalls = 0;
+  let webglContext = null;
+
+  function trackGameDrawing() {
     const originalGetContext = canvas.getContext.bind(canvas);
     try {
       canvas.getContext = function (type, attributes) {
-        if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
-          return originalGetContext(type, {
-            ...(attributes || {}),
-            preserveDrawingBuffer: true
-          });
+        const isWebGL = type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl';
+        const gl = originalGetContext(type, isWebGL
+          ? { ...(attributes || {}), preserveDrawingBuffer: true }
+          : attributes);
+
+        if (isWebGL && gl && !gl.__webdoomDrawTrackerInstalled) {
+          webglContext = gl;
+          try {
+            Object.defineProperty(gl, '__webdoomDrawTrackerInstalled', { value: true });
+            for (const name of [
+              'drawArrays',
+              'drawElements',
+              'drawArraysInstanced',
+              'drawElementsInstanced',
+              'drawRangeElements'
+            ]) {
+              if (typeof gl[name] !== 'function') continue;
+              const original = gl[name].bind(gl);
+              gl[name] = (...args) => {
+                webglDrawCalls++;
+                return original(...args);
+              };
+            }
+          } catch (error) {
+            console.warn('[WebDOOM] Could not instrument WebGL draw calls.', error);
+          }
         }
-        return originalGetContext(type, attributes);
+        return gl;
       };
     } catch (error) {
-      console.warn('[WebDOOM] Could not wrap canvas.getContext; frame detection will use the browser default.', error);
+      console.warn('[WebDOOM] Could not wrap canvas.getContext.', error);
     }
   }
 
   function hasRenderedGameFrame() {
-    try {
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl || gl.isContextLost() || canvas.width < 64 || canvas.height < 32) return false;
-      const points = [[0.2, 0.2], [0.5, 0.2], [0.8, 0.2], [0.2, 0.5], [0.5, 0.5], [0.8, 0.5], [0.2, 0.8], [0.5, 0.8], [0.8, 0.8]];
-      const colors = new Set();
-      let nonBlackSamples = 0;
-      const pixel = new Uint8Array(4);
-      for (const [xRatio, yRatio] of points) {
-        const x = Math.min(canvas.width - 1, Math.round(canvas.width * xRatio));
-        const y = Math.min(canvas.height - 1, Math.round(canvas.height * yRatio));
-        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-        colors.add(`${pixel[0]},${pixel[1]},${pixel[2]}`);
-        if (pixel[0] > 12 || pixel[1] > 12 || pixel[2] > 12) nonBlackSamples++;
-      }
-      return colors.size >= 3 && nonBlackSamples >= 3;
-    } catch {
-      return false;
-    }
+    return Boolean(
+      webglContext &&
+      !webglContext.isContextLost() &&
+      canvas.width >= 64 &&
+      canvas.height >= 32 &&
+      webglDrawCalls > 0
+    );
   }
 
   function checkForFirstFrame(attempt = 0) {
@@ -148,7 +159,10 @@
         return;
       }
       if (attempt >= 180) {
-        showError('THE ENGINE INITIALIZED, BUT NO GAME FRAME WAS DETECTED.', new Error('The browser did not render a recognizable game frame within the startup window. Reload the game panel or try a browser with working WebGL support.'));
+        showError(
+          'THE ENGINE INITIALIZED, BUT NO GAME FRAME WAS DETECTED.',
+          new Error(`No WebGL draw activity was detected within the startup window. Canvas: ${canvas.width}×${canvas.height}; WebGL context: ${Boolean(webglContext)}; context lost: ${webglContext ? webglContext.isContextLost() : 'unknown'}; draw calls: ${webglDrawCalls}. Check the console and network requests for doom1.wasm and doom1.data.gz.`)
+        );
         return;
       }
       checkForFirstFrame(attempt + 1);
@@ -169,7 +183,7 @@
     errorBox.hidden = true;
     setStatus('Loading engine assets…');
 
-    preserveGameDrawingBuffer();
+    trackGameDrawing();
 
     window.Module = {
       canvas,
