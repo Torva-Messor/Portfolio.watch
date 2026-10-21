@@ -1,0 +1,12 @@
+{
+  "name": "void-systems-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "verify": "node tools/verify-project.mjs && node tools/check-assets.mjs",
+    "check:syntax": "node tools/check-syntax.mjs",
+    "smoke:browser": "python3 tools/browser-smoke.py"
+  }
+}

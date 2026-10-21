@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Doom runtime smoke test</title></head>
+<body>
+  <h1>Doom runtime smoke test</h1>
+  <iframe id="doom-frame" title="Doom runtime test" src="../assets/doom/index.html" style="width:100%;height:75vh;border:0"></iframe>
+  <pre id="doom-test-result" data-result="running">RUNNING</pre>
+  <script>
+  (() => {
+    const output = document.querySelector('#doom-test-result');
+    const frame = document.querySelector('#doom-frame');
+    let finished = false;
+    const timer = setTimeout(() => fail('Timed out waiting for the runtime to render a game frame.'), 22000);
+    function finish(state, message) {
+      if (finished) return;
+      finished = true; clearTimeout(timer);
+      output.dataset.result = state; output.textContent = `${state.toUpperCase()}\n${message}`;
+    }
+    function fail(message) { finish('fail', message); }
+    frame.addEventListener('load', () => {
+      try {
+        const child = frame.contentWindow;
+        const documentRef = child.document;
+        const start = documentRef.querySelector('#start-button');
+        if (!start) return fail('Game UI did not render in the iframe.');
+        start.click();
+        const deadline = Date.now() + 21500;
+        const poll = () => {
+          try {
+            const runtime = documentRef.querySelector('#runtime-status')?.textContent || '';
+            const error = documentRef.querySelector('#error-text');
+            if (runtime.includes('GAME RUNNING')) return finish('pass', `A rendered game frame was detected after WebAssembly startup. Status: ${runtime}`);
+            if (error && !error.hidden) return fail(`Runtime error shown by the game: ${error.textContent}`);
+            if (Date.now() > deadline) return fail(`Runtime did not render a game frame. Current status: ${runtime}`);
+            setTimeout(poll, 150);
+          } catch (error) { fail(`Unable to inspect game status: ${error.message}`); }
+        };
+        setTimeout(poll, 150);
+      } catch (error) { fail(`Could not start game: ${error.message}`); }
+    });
+  })();
+  </script>
+</body>
+</html>

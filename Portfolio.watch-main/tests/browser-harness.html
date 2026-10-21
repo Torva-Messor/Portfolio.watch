@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VOID Portfolio Browser Test Harness</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/watch.css">
+  <style>
+    body{margin:0;padding:20px;font:14px sans-serif;background:#f4f1ea;color:#151515}#instrument-stage{width:min(96vw,1100px);margin:0 auto;min-height:500px}.instrument-overlay{display:block;position:relative;inset:auto;width:100%;height:auto;opacity:1;visibility:visible;pointer-events:auto}.instrument-shell{width:100%;max-height:none;overflow:visible}.instrument-overlay__backdrop{display:none}.quant-canvas-box{height:420px}.quant-canvas-box canvas{width:100%;height:100%}#browser-test-result{white-space:pre-wrap;padding:16px;background:#fff;border:1px solid #ddd}.specimen{display:inline-block;margin:4px}#lab-content{padding:10px}#lab-modal{position:static}#lab-modal.is-open{position:static}
+  </style>
+</head>
+<body>
+  <h1>Browser interaction tests</h1>
+  <div><button class="specimen" data-lab="quant">Market</button><button class="specimen" data-lab="founder">Product</button><button class="specimen" data-lab="dpls">Air/Ground</button></div>
+  <div id="lab-modal" aria-hidden="true"><span id="lab-code">LAB / 000</span><div id="lab-content"></div><button data-close-modal>close</button></div>
+  <pre id="browser-test-result">RUNNING</pre>
+  <script type="module">
+    import { open, close } from '../js/case-studies.js';
+    const result = document.querySelector('#browser-test-result');
+    const passed = [];
+    const assert = (condition, message) => { if (!condition) throw new Error(message); passed.push(message); };
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    try {
+      localStorage.removeItem('void-systems-air-ground-store-v1');
+      open('quant');
+      const timeline = document.querySelector('#q-timeline');
+      const dateLabel = document.querySelector('#q-date-label');
+      const metric = document.querySelector('#q-last-value');
+      const originalDate = dateLabel.textContent;
+      timeline.value = '100';
+      timeline.dispatchEvent(new Event('input', { bubbles: true }));
+      assert(dateLabel.textContent !== originalDate, 'ζ-Field timeline changes the selected historical date');
+      assert(document.querySelector('#q-date').value === dateLabel.textContent, 'date selector and historical timeline remain synchronized');
+      assert(metric.textContent !== '—', 'selected observation metrics are populated');
+      const beforeWindow = document.querySelector('#q-count').textContent;
+      document.querySelector('#q-window').value = '10';
+      document.querySelector('#q-window').dispatchEvent(new Event('input', { bubbles: true }));
+      assert(document.querySelector('#q-count').textContent !== beforeWindow, 'analysis-window control recomputes the baseline');
+      close();
+
+      open('founder');
+      const run = document.querySelector('#product-run');
+      for (let i = 0; i < 4; i++) run.click();
+      assert(document.querySelector('#product-observations').textContent === 'ITERATIONS / 1', 'Product System iteration count advances on a complete loop');
+      assert(document.querySelectorAll('.product-node.is-current').length === 1, 'Product System diagram reflects exactly one active phase');
+      assert(document.querySelector('.product-node.is-current').dataset.productNode === 'user', 'Product System decision phase returns the diagram focus to the user loop');
+      document.querySelector('#product-reset').click();
+      assert(document.querySelector('#product-observations').textContent === 'ITERATIONS / 0', 'Product System reset restores its initial count');
+      assert(document.querySelector('.product-node.is-current').dataset.productNode === 'user', 'Product System reset synchronizes diagram state');
+      close();
+
+      open('dpls');
+      let rows = () => [...document.querySelectorAll('#stores-rows tr')];
+      assert(rows().length === 6, 'Air/Ground opens with six explicitly fictional sample records');
+      const form = document.querySelector('#stores-add');
+      form.elements.name.value = 'Browser test item';
+      form.elements.store.value = 'Ground';
+      form.elements.location.value = 'T-77';
+      form.elements.quantity.value = '3';
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      assert(rows().length === 7 && rows().some(row => row.textContent.includes('Browser test item')), 'Air/Ground adds a new item');
+      const newEdit = document.querySelector('button[data-edit-id="AG-007"]');
+      newEdit.click();
+      form.elements.name.value = 'Edited browser item';
+      form.elements.quantity.value = '0';
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      assert(rows().some(row => row.textContent.includes('Edited browser item') && row.textContent.includes('OUT OF STOCK')), 'Air/Ground edits records and recalculates stock status');
+      document.querySelector('#stores-filter').value = 'Air';
+      document.querySelector('#stores-filter').dispatchEvent(new Event('change', { bubbles: true }));
+      assert(rows().every(row => row.textContent.includes('AIR')), 'Air/Ground store filter limits visible records');
+      document.querySelector('#stores-filter').value = 'all';
+      document.querySelector('#stores-filter').dispatchEvent(new Event('change', { bubbles: true }));
+      document.querySelector('#stores-search').value = 'Edited browser item';
+      document.querySelector('#stores-search').dispatchEvent(new Event('input', { bubbles: true }));
+      assert(rows().length === 1, 'Air/Ground text search filters by item name');
+      document.querySelector('#stores-search').value = '';
+      document.querySelector('#stores-search').dispatchEvent(new Event('input', { bubbles: true }));
+      document.querySelector('button[data-remove-id="AG-007"]').click();
+      assert(rows().length === 6, 'Air/Ground removes records');
+      assert(document.querySelector('#stores-visible').textContent === '6', 'Air/Ground visible-record count stays synchronized');
+      document.querySelector('#stores-export').click();
+      assert(document.querySelector('#stores-export'), 'Air/Ground CSV export control is wired');
+      close();
+      await wait(50);
+      result.textContent = `PASS ${passed.length} browser interaction checks\n${passed.map((value, index) => `${index + 1}. ${value}`).join('\n')}`;
+      result.dataset.result = 'pass';
+    } catch (error) {
+      result.textContent = `FAIL ${passed.length} browser interaction checks\n${passed.map((value, index) => `${index + 1}. ${value}`).join('\n')}\nERROR: ${error?.stack || error}`;
+      result.dataset.result = 'fail';
+      console.error(error);
+    }
+  </script>
+</body>
+</html>
